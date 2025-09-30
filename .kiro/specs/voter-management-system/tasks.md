@@ -106,7 +106,7 @@
   - Implement role-based access control ensuring only admins can manage managers
   - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
 
-- [-] 14. Public Portal Frontend - Core Components and Routing
+- [x] 14. Public Portal Frontend - Core Components and Routing
   - Set up React application with Vite, React Router, and Tailwind CSS
   - Create main App component with routing configuration
   - Implement common UI components (Button, Input, Select, Modal, LoadingSpinner)

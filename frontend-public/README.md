@@ -1,73 +1,100 @@
-# React + TypeScript + Vite
+# Padhvidhar Matdar Sangh - Public Portal
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the public-facing frontend application for the Padhvidhar Matdar Sangh voter management system. It provides a user-friendly interface for citizens to register as voters and manage their profiles.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Aadhar Check**: Verify if an Aadhar number is already registered
+- **Voter Enrollment**: Complete registration form with document uploads
+- **User Dashboard**: View and edit personal information
+- **Document Management**: Upload and manage required documents
+- **Reference System**: Add references for community verification
+- **Responsive Design**: Works on desktop and mobile devices
 
-## React Compiler
+## Technology Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React 19** with TypeScript
+- **Vite** for build tooling
+- **Tailwind CSS** for styling
+- **React Router** for navigation
+- **React Hook Form** with Zod validation
+- **TanStack Query** for server state management
+- **Axios** for API communication
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node.js 18+
+- npm or yarn
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Installation
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. Install dependencies:
+
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. Copy environment variables:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cp .env.example .env
 ```
+
+3. Update the `.env` file with your API URL and other configuration.
+
+### Development
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:5173`
+
+### Building
+
+Build for production:
+
+```bash
+npm run build
+```
+
+### Linting
+
+Run ESLint:
+
+```bash
+npm run lint
+```
+
+## Project Structure
+
+```
+src/
+├── components/          # Reusable UI components
+│   ├── ui/             # Basic UI components (Button, Input, etc.)
+│   ├── auth/           # Authentication-related components
+│   └── layout/         # Layout components
+├── contexts/           # React contexts
+├── hooks/              # Custom React hooks
+├── lib/                # Utility functions and API configuration
+├── pages/              # Page components
+└── types/              # TypeScript type definitions
+```
+
+## Environment Variables
+
+- `VITE_API_URL`: Backend API URL
+- `VITE_APP_NAME`: Application name
+- `VITE_MAX_FILE_SIZE`: Maximum file upload size
+- `VITE_ALLOWED_FILE_TYPES`: Allowed file types for uploads
+
+## Contributing
+
+1. Follow the existing code style
+2. Run linting before committing
+3. Ensure all builds pass
+4. Write meaningful commit messages
