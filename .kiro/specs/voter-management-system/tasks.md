@@ -114,7 +114,7 @@
   - Set up Axios configuration with interceptors for API calls
   - _Requirements: 1.1, 5.1_
 
-- [ ] 15. Aadhar Check and Landing Page Implementation
+- [x] 15. Aadhar Check and Landing Page Implementation
   - Create LandingPage component with Aadhar check modal
   - Implement AadharCheckModal with 12-digit validation and API integration
   - Add user lookup functionality with existing user detection
@@ -122,7 +122,7 @@
   - Implement error handling and user feedback for Aadhar check process
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 16. Enrollment Form Implementation
+- [x] 16. Enrollment Form Implementation
   - Create EnrollmentForm component with multi-section layout
   - Implement PersonalInfoSection with all personal detail fields
   - Add AddressSection with city defaulting to PUNE and proper validation
@@ -131,7 +131,7 @@
   - Add form validation using React Hook Form and Zod schemas
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
 
-- [ ] 17. Document Upload Frontend Components
+- [-] 17. Document Upload Frontend Components
   - Create DocumentUpload component with drag-and-drop functionality using react-dropzone
   - Implement ImagePreview component with compression and cropping capabilities
   - Add CameraCapture component for mobile photo capture

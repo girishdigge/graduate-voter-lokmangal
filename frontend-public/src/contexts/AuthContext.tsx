@@ -1,5 +1,5 @@
 import React, { useState, useEffect, type ReactNode } from 'react';
-import { api } from '../lib/api';
+import { apiEndpoints } from '../lib/api';
 import { AuthContext, type User, type AuthContextType } from './auth-context';
 
 interface AuthProviderProps {
@@ -41,11 +41,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   ): Promise<{ exists: boolean; user?: User }> => {
     try {
       setIsLoading(true);
-      const response = await api.post('/aadhar/check', { aadharNumber });
+      const response = await apiEndpoints.checkAadhar(aadharNumber);
+      const data = response.data.data; // Backend wraps response in data object
 
-      if (response.data.exists) {
-        const userData = response.data.user;
-        const token = response.data.token;
+      if (data.exists) {
+        const userData = data.user;
+        const token = data.token;
 
         setUser(userData);
         localStorage.setItem('userToken', token);

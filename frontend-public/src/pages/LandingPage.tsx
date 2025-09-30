@@ -1,7 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '../components/ui/Button';
+import { AadharCheckModal } from '../components/ui/AadharCheckModal';
 
 const LandingPage: React.FC = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-16">
@@ -29,7 +40,7 @@ const LandingPage: React.FC = () => {
               Enter your Aadhar number to check if you're already registered or
               to begin enrollment
             </p>
-            <Button size="lg" className="px-8">
+            <Button size="lg" className="px-8" onClick={handleOpenModal}>
               Check Aadhar & Register
             </Button>
           </div>
@@ -110,6 +121,9 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Aadhar Check Modal */}
+      <AadharCheckModal isOpen={isModalOpen} onClose={handleCloseModal} />
     </div>
   );
 };
