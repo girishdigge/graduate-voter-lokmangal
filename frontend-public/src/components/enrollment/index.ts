@@ -3,3 +3,4 @@ export { default as PersonalInfoSection } from './PersonalInfoSection';
 export { default as AddressSection } from './AddressSection';
 export { default as ElectorSection } from './ElectorSection';
 export { default as EducationSection } from './EducationSection';
+export { DocumentSection } from './DocumentSection';

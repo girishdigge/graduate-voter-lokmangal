@@ -131,7 +131,7 @@
   - Add form validation using React Hook Form and Zod schemas
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
 
-- [-] 17. Document Upload Frontend Components
+- [x] 17. Document Upload Frontend Components
   - Create DocumentUpload component with drag-and-drop functionality using react-dropzone
   - Implement ImagePreview component with compression and cropping capabilities
   - Add CameraCapture component for mobile photo capture
