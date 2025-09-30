@@ -17,30 +17,7 @@ async function migrateUsers() {
     logger.info('Starting user migration to Elasticsearch...');
 
     // Get all users from database
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        aadhar_number: true,
-        full_name: true,
-        contact: true,
-        email: true,
-        sex: true,
-        is_verified: true,
-        assembly_number: true,
-        assembly_name: true,
-        polling_station_number: true,
-        city: true,
-        state: true,
-        pincode: true,
-        age: true,
-        qualification: true,
-        occupation: true,
-        created_at: true,
-        updated_at: true,
-        verified_at: true,
-        verified_by: true,
-      },
-    });
+    const users = await prisma.user.findMany();
 
     if (users.length === 0) {
       logger.info('No users found to migrate');
@@ -100,9 +77,9 @@ async function migrateReferences() {
       include: {
         user: {
           select: {
-            full_name: true,
+            fullName: true,
             contact: true,
-            aadhar_number: true,
+            aadharNumber: true,
           },
         },
       },
@@ -124,9 +101,9 @@ async function migrateReferences() {
         await searchService.indexReference({
           ...reference,
           user: {
-            full_name: reference.user.full_name,
+            fullName: reference.user.fullName,
             contact: reference.user.contact,
-            aadhar_number: reference.user.aadhar_number,
+            aadharNumber: reference.user.aadharNumber,
           },
         });
         migratedCount++;

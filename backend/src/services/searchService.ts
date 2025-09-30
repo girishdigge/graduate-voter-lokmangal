@@ -28,6 +28,13 @@ export interface SearchOptions {
   sort_order?: 'asc' | 'desc';
 }
 
+export interface ReferenceSearchOptions {
+  page?: number;
+  limit?: number;
+  sort_by?: 'created_at' | 'updated_at' | 'reference_name';
+  sort_order?: 'asc' | 'desc';
+}
+
 export interface SearchResult<T> {
   data: T[];
   total: number;
@@ -104,7 +111,7 @@ class SearchService {
    */
   async indexReference(
     reference: Reference & {
-      user?: Pick<User, 'full_name' | 'contact' | 'aadhar_number'>;
+      user?: Pick<User, 'fullName' | 'contact' | 'aadharNumber'>;
     }
   ): Promise<void> {
     try {
@@ -121,9 +128,9 @@ class SearchService {
         created_at: reference.createdAt,
         updated_at: reference.updatedAt,
         // Include user information for context
-        user_name: reference.user?.full_name,
+        user_name: reference.user?.fullName,
         user_contact: reference.user?.contact,
-        user_aadhar: reference.user?.aadhar_number,
+        user_aadhar: reference.user?.aadharNumber,
       };
 
       await client.index({
@@ -269,7 +276,10 @@ class SearchService {
 
       // Process results
       const hits = response.hits.hits;
-      const total = response.hits.total.value;
+      const total =
+        typeof response.hits.total === 'number'
+          ? response.hits.total
+          : response.hits.total?.value || 0;
       const data = hits.map((hit: any) => ({
         ...hit._source,
         _score: hit._score,
@@ -299,7 +309,7 @@ class SearchService {
   async searchReferences(
     query: string = '',
     filters: { status?: string; user_id?: string } = {},
-    options: SearchOptions = {}
+    options: ReferenceSearchOptions = {}
   ): Promise<SearchResult<ReferenceSearchResult>> {
     try {
       const client = this.esClient();
@@ -357,11 +367,7 @@ class SearchService {
 
       // Build sort configuration
       const sort: any = {};
-      if (sort_by === 'reference_name') {
-        sort['reference_name.keyword'] = { order: sort_order };
-      } else {
-        sort[sort_by] = { order: sort_order };
-      }
+      sort[sort_by] = { order: sort_order };
 
       // Execute search
       const response = await client.search({
@@ -376,7 +382,10 @@ class SearchService {
 
       // Process results
       const hits = response.hits.hits;
-      const total = response.hits.total.value;
+      const total =
+        typeof response.hits.total === 'number'
+          ? response.hits.total
+          : response.hits.total?.value || 0;
       const data = hits.map((hit: any) => ({
         ...hit._source,
         _score: hit._score,
@@ -442,7 +451,7 @@ class SearchService {
       });
 
       logger.debug('Reference removed from search index', { referenceId });
-    } catch (error) {
+    } catch (error: any) {
       if (error.meta?.statusCode === 404) {
         logger.debug('Reference not found in search index', { referenceId });
         return;
@@ -545,9 +554,14 @@ class SearchService {
         },
       });
 
-      const suggestions = response.suggest.name_suggest[0].options.map(
-        (option: any) => option.text
-      );
+      if (!response.suggest?.name_suggest?.[0]?.options) {
+        return [];
+      }
+
+      const options = response.suggest.name_suggest[0].options;
+      const suggestions = Array.isArray(options)
+        ? options.map((option: any) => option.text)
+        : [];
 
       return suggestions;
     } catch (error) {

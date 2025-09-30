@@ -8,6 +8,13 @@ import {
   validateSession,
   searchVoters,
   searchReferences,
+  getStats,
+  getVoters,
+  getVoterDetails,
+  verifyVoter,
+  updateVoter,
+  getReferences,
+  updateReferenceStatusController,
 } from '../controllers/adminController.js';
 import { authenticateAdmin } from '../middleware/auth.js';
 
@@ -131,4 +138,192 @@ router.get('/search/voters', authenticateAdmin, searchVoters);
  */
 router.get('/search/references', authenticateAdmin, searchReferences);
 
+/**
+ * @route   GET /api/admin/stats
+ * @desc    Get dashboard statistics including voter counts
+ * @access  Private (Admin)
+ * @headers Authorization: Bearer <token>
+ */
+router.get('/stats', authenticateAdmin, getStats);
+
+/**
+ * @route   GET /api/admin/voters
+ * @desc    Get paginated list of voters with search and filtering
+ * @access  Private (Admin)
+ * @headers Authorization: Bearer <token>
+ * @query   {
+ *   q?: string,
+ *   verification_status?: 'verified' | 'unverified',
+ *   sex?: 'MALE' | 'FEMALE' | 'OTHER',
+ *   assembly_number?: string,
+ *   polling_station_number?: string,
+ *   city?: string,
+ *   state?: string,
+ *   age_min?: number,
+ *   age_max?: number,
+ *   page?: number,
+ *   limit?: number,
+ *   sort_by?: 'created_at' | 'updated_at' | 'full_name' | 'age' | 'assembly_number',
+ *   sort_order?: 'asc' | 'desc'
+ * }
+ */
+router.get('/voters', authenticateAdmin, getVoters);
+
+/**
+ * @route   GET /api/admin/voters/:userId
+ * @desc    Get detailed voter information
+ * @access  Private (Admin)
+ * @headers Authorization: Bearer <token>
+ * @params  userId: string (UUID)
+ */
+router.get('/voters/:userId', authenticateAdmin, getVoterDetails);
+
+/**
+ * @route   PUT /api/admin/voters/:userId/verify
+ * @desc    Verify or unverify a voter
+ * @access  Private (Admin)
+ * @headers Authorization: Bearer <token>
+ * @params  userId: string (UUID)
+ * @body    { isVerified: boolean }
+ */
+router.put('/voters/:userId/verify', authenticateAdmin, verifyVoter);
+
+/**
+ * @route   PUT /api/admin/voters/:userId
+ * @desc    Update voter information by admin
+ * @access  Private (Admin)
+ * @headers Authorization: Bearer <token>
+ * @params  userId: string (UUID)
+ * @body    Partial user data object
+ */
+router.put('/voters/:userId', authenticateAdmin, updateVoter);
+
+/**
+ * @route   GET /api/admin/references
+ * @desc    Get paginated list of references with search and filtering
+ * @access  Private (Admin)
+ * @headers Authorization: Bearer <token>
+ * @query   {
+ *   q?: string,
+ *   status?: 'PENDING' | 'CONTACTED' | 'APPLIED',
+ *   user_id?: string,
+ *   page?: number,
+ *   limit?: number,
+ *   sort_by?: 'created_at' | 'updated_at' | 'reference_name',
+ *   sort_order?: 'asc' | 'desc'
+ * }
+ */
+router.get('/references', authenticateAdmin, getReferences);
+
+/**
+ * @route   PUT /api/admin/references/:referenceId
+ * @desc    Update reference status
+ * @access  Private (Admin)
+ * @headers Authorization: Bearer <token>
+ * @params  referenceId: string (UUID)
+ * @body    { status: 'PENDING' | 'CONTACTED' | 'APPLIED' }
+ */
+router.put(
+  '/references/:referenceId',
+  authenticateAdmin,
+  updateReferenceStatusController
+);
+
 export default router;
+// Import manager management controllers
+import {
+  getManagers,
+  createManagerController,
+  updateManagerController,
+  deactivateManagerController,
+  getManagerDetails,
+} from '../controllers/adminController.js';
+import { requireRole } from '../middleware/auth.js';
+
+/**
+ * Manager Management Routes (Admin Only)
+ */
+
+/**
+ * @route   GET /api/admin/managers
+ * @desc    Get paginated list of managers with search and filtering
+ * @access  Private (Admin only)
+ * @headers Authorization: Bearer <token>
+ * @query   {
+ *   page?: number,
+ *   limit?: number,
+ *   sort_by?: 'created_at' | 'updated_at' | 'username' | 'email' | 'full_name' | 'role' | 'last_login_at',
+ *   sort_order?: 'asc' | 'desc',
+ *   search?: string,
+ *   role?: 'ADMIN' | 'MANAGER',
+ *   is_active?: boolean
+ * }
+ */
+router.get('/managers', authenticateAdmin, requireRole(['admin']), getManagers);
+
+/**
+ * @route   POST /api/admin/managers
+ * @desc    Create a new manager account
+ * @access  Private (Admin only)
+ * @headers Authorization: Bearer <token>
+ * @body    {
+ *   username: string,
+ *   email: string,
+ *   fullName: string,
+ *   password: string,
+ *   role?: 'ADMIN' | 'MANAGER'
+ * }
+ */
+router.post(
+  '/managers',
+  authenticateAdmin,
+  requireRole(['admin']),
+  createManagerController
+);
+
+/**
+ * @route   GET /api/admin/managers/:managerId
+ * @desc    Get manager details by ID
+ * @access  Private (Admin only)
+ * @headers Authorization: Bearer <token>
+ * @params  managerId: string (UUID)
+ */
+router.get(
+  '/managers/:managerId',
+  authenticateAdmin,
+  requireRole(['admin']),
+  getManagerDetails
+);
+
+/**
+ * @route   PUT /api/admin/managers/:managerId
+ * @desc    Update manager details
+ * @access  Private (Admin only)
+ * @headers Authorization: Bearer <token>
+ * @params  managerId: string (UUID)
+ * @body    {
+ *   email?: string,
+ *   fullName?: string,
+ *   isActive?: boolean
+ * }
+ */
+router.put(
+  '/managers/:managerId',
+  authenticateAdmin,
+  requireRole(['admin']),
+  updateManagerController
+);
+
+/**
+ * @route   DELETE /api/admin/managers/:managerId
+ * @desc    Deactivate manager account
+ * @access  Private (Admin only)
+ * @headers Authorization: Bearer <token>
+ * @params  managerId: string (UUID)
+ */
+router.delete(
+  '/managers/:managerId',
+  authenticateAdmin,
+  requireRole(['admin']),
+  deactivateManagerController
+);

@@ -364,9 +364,9 @@ export const addUserReferences = async (
           updatedAt: reference.createdAt, // Use createdAt as updatedAt for new references
           statusUpdatedAt: null,
           user: {
-            full_name: user.fullName,
+            fullName: user.fullName,
             contact: user.contact,
-            aadhar_number: '', // We don't have access to aadhar here, will be updated later if needed
+            aadharNumber: '', // We don't have access to aadhar here, will be updated later if needed
           },
         });
         logger.debug('Reference indexed in Elasticsearch', {
@@ -549,9 +549,9 @@ export const updateReferenceStatus = async (
         ...updatedReference,
         userId: updatedReference.user.id,
         user: {
-          full_name: updatedReference.user.fullName,
+          fullName: updatedReference.user.fullName,
           contact: '', // We don't have access to contact here
-          aadhar_number: '', // We don't have access to aadhar here
+          aadharNumber: '', // We don't have access to aadhar here
         },
       });
       logger.debug('Reference updated in Elasticsearch', { referenceId });

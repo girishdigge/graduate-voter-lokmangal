@@ -73,7 +73,7 @@
   - Create session management and token validation for admin routes
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [-] 10. Elasticsearch Integration and Search Service
+- [x] 10. Elasticsearch Integration and Search Service
   - Set up Elasticsearch client and connection configuration
   - Create user indexing service to sync user data with Elasticsearch
   - Implement search service with query building for name, Aadhar, and contact searches
@@ -82,7 +82,7 @@
   - Implement GET /api/admin/search/voters and GET /api/admin/search/references endpoints
   - _Requirements: 7.3, 7.4, 8.2_
 
-- [ ] 11. Admin Dashboard Statistics and Voter Management
+- [x] 11. Admin Dashboard Statistics and Voter Management
   - Create GET /api/admin/stats endpoint with voter count aggregations
   - Implement GET /api/admin/voters endpoint with pagination, search, and filtering
   - Add GET /api/admin/voters/:userId endpoint for detailed voter information
@@ -91,14 +91,14 @@
   - Add comprehensive audit logging for all admin actions
   - _Requirements: 7.1, 7.2, 7.5, 7.6, 7.7, 10.1_
 
-- [ ] 12. Reference Management for Admins
+- [x] 12. Reference Management for Admins
   - Implement GET /api/admin/references endpoint with pagination and filtering
   - Create PUT /api/admin/references/:referenceId endpoint for status updates
   - Add reference search functionality integrated with Elasticsearch
   - Implement audit logging for reference status changes
   - _Requirements: 8.1, 8.3, 8.4, 8.5_
 
-- [ ] 13. Manager and Admin User Management
+- [x] 13. Manager and Admin User Management
   - Create GET /api/admin/managers endpoint for listing all managers
   - Implement POST /api/admin/managers endpoint for creating new manager accounts
   - Add PUT /api/admin/managers/:managerId endpoint for updating manager details
@@ -106,7 +106,7 @@
   - Implement role-based access control ensuring only admins can manage managers
   - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
 
-- [ ] 14. Public Portal Frontend - Core Components and Routing
+- [-] 14. Public Portal Frontend - Core Components and Routing
   - Set up React application with Vite, React Router, and Tailwind CSS
   - Create main App component with routing configuration
   - Implement common UI components (Button, Input, Select, Modal, LoadingSpinner)
