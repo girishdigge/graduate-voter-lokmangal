@@ -1,73 +1,85 @@
-# React + TypeScript + Vite
+# Admin Dashboard Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the administrative interface for the Voter Management System.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Authentication**: Secure login for admin and manager users
+- **Role-based Access Control**: Different permissions for admin vs manager roles
+- **Responsive Design**: Works on desktop and mobile devices
+- **Dashboard**: Overview of system statistics
+- **Voter Management**: View and manage voter registrations (to be implemented)
+- **Reference Management**: Manage voter references (to be implemented)
+- **Settings**: Admin-only settings and user management (to be implemented)
 
-## React Compiler
+## Technology Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React 19 with TypeScript
+- React Router for navigation
+- TanStack Query for server state management
+- React Hook Form with Zod validation
+- Tailwind CSS for styling
+- Lucide React for icons
+- Axios for API calls
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1. Install dependencies:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+   ```bash
+   npm install
+   ```
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+2. Copy environment variables:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Update the API URL in `.env` if needed:
+
+   ```
+   VITE_API_URL=http://localhost:3000/api
+   ```
+
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── auth/           # Authentication components
+│   ├── layout/         # Layout components (Header, Sidebar, AdminLayout)
+│   └── ui/             # Reusable UI components
+├── contexts/           # React contexts (AuthContext)
+├── lib/                # Utilities and API configuration
+├── pages/              # Page components
+├── types/              # TypeScript type definitions
+└── App.tsx             # Main application component
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Authentication
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x';
-import reactDom from 'eslint-plugin-react-dom';
+The admin dashboard uses JWT-based authentication with role-based access control:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+- **Admin**: Full access to all features including user management
+- **Manager**: Limited access, cannot manage other users
+
+## Environment Variables
+
+- `VITE_API_URL`: Backend API base URL
+- `VITE_NODE_ENV`: Environment (development/production)
+
+## Build
+
+To build for production:
+
+```bash
+npm run build
 ```
+
+The built files will be in the `dist/` directory.

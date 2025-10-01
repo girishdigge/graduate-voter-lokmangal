@@ -85,8 +85,17 @@ export const enrollmentFormSchema = z.object({
   education: educationSchema,
 });
 
+// Reference Schema
+export const referenceSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  contact: z
+    .string()
+    .regex(/^\d{10}$/, 'Contact number must be exactly 10 digits'),
+});
+
 export type PersonalInfoFormData = z.infer<typeof personalInfoSchema>;
 export type AddressFormData = z.infer<typeof addressSchema>;
 export type ElectorFormData = z.infer<typeof electorSchema>;
 export type EducationFormData = z.infer<typeof educationSchema>;
 export type EnrollmentFormData = z.infer<typeof enrollmentFormSchema>;
+export type ReferenceFormData = z.infer<typeof referenceSchema>;
