@@ -13,6 +13,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { VotersPage } from './pages/VotersPage';
 import { ReferencesPage } from './pages/ReferencesPage';
 import { SettingsPage } from './pages/SettingsPage';
+import TestPage from './pages/TestPage';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -31,6 +32,7 @@ function App() {
         <Router>
           <Routes>
             {/* Public routes */}
+            <Route path="/test" element={<TestPage />} />
             <Route path="/login" element={<LoginPage />} />
 
             {/* Protected routes */}
@@ -57,7 +59,7 @@ function App() {
             </Route>
 
             {/* Catch all route */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/test" replace />} />
           </Routes>
         </Router>
       </AuthProvider>

@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 
 // Import configuration and middleware
@@ -15,6 +15,17 @@ import {
   testElasticsearchConnection,
 } from './config/elasticsearch.js';
 
+// Import security middleware
+import {
+  helmetConfig,
+  additionalSecurityHeaders,
+  securityMonitoring,
+  rateLimitBypassDetection,
+} from './config/security.js';
+import { getCorsConfig, corsSecurityMonitoring } from './config/cors.js';
+import { sanitizeAllInputs } from './utils/sanitization.js';
+import { setCSRFToken } from './middleware/csrfProtection.js';
+
 // Load environment variables
 dotenv.config();
 
@@ -23,88 +34,86 @@ import { validateEnvironment } from './config/env.js';
 validateEnvironment();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
-// Trust proxy for accurate IP addresses (important for rate limiting)
-app.set('trust proxy', 1);
+// Trust proxy for accurate IP addresses (important for rate limiting and security)
+const trustedProxies = process.env.TRUSTED_PROXIES?.split(',') || [
+  '127.0.0.1',
+  '::1',
+];
+app.set('trust proxy', trustedProxies);
 
-// Security middleware
-app.use(
-  helmet({
-    crossOriginEmbedderPolicy: false, // Allow embedding for file uploads
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'"],
-        fontSrc: ["'self'"],
-        objectSrc: ["'none'"],
-        mediaSrc: ["'self'"],
-        frameSrc: ["'none'"],
-      },
-    },
-  })
-);
+// Security monitoring middleware (before other middleware)
+app.use(securityMonitoring);
+app.use(rateLimitBypassDetection);
+
+// Enhanced security headers
+app.use(helmetConfig);
+app.use(additionalSecurityHeaders);
 
 // Compression middleware
 app.use(compression());
 
-// CORS configuration
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [
-        'http://localhost:3000',
-        'http://localhost:3002',
-        'http://localhost:5173',
-        'http://localhost:5174',
-      ];
+// Cookie parser for CSRF tokens
+app.use(cookieParser());
 
-      // Allow requests with no origin (mobile apps, Postman, etc.)
-      if (!origin) return callback(null, true);
+// Enhanced CORS configuration with security monitoring
+app.use(corsSecurityMonitoring);
+app.use(cors(getCorsConfig()));
 
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        logger.warn('CORS blocked request from origin', { origin });
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  })
-);
-
-// Rate limiting
+// Rate limiting (after CORS to allow preflight requests)
 app.use(generalLimiter);
 
-// Request parsing middleware
+// Request parsing middleware with enhanced security
 app.use(
   express.json({
     limit: '10mb',
-    verify: (req, res, buf) => {
-      // Log large payloads
-      if (buf.length > 1024 * 1024) {
-        // 1MB
+    verify: (req: any, res, buf) => {
+      // Enhanced payload monitoring
+      const sizeInMB = buf.length / (1024 * 1024);
+
+      if (sizeInMB > 1) {
         logger.warn('Large request payload detected', {
-          size: `${(buf.length / (1024 * 1024)).toFixed(2)}MB`,
+          size: `${sizeInMB.toFixed(2)}MB`,
           url: req.url,
           method: req.method,
+          ip: req.ip || 'unknown',
+          userAgent: req.get ? req.get('User-Agent') : 'unknown',
+        });
+      }
+
+      // Monitor for potential DoS attacks
+      if (sizeInMB > 5) {
+        logger.error('Very large request payload detected - potential DoS', {
+          size: `${sizeInMB.toFixed(2)}MB`,
+          url: req.url,
+          method: req.method,
+          ip: req.ip || 'unknown',
+          userAgent: req.get ? req.get('User-Agent') : 'unknown',
+          alertType: 'SECURITY',
+          severity: 'HIGH',
         });
       }
     },
   })
 );
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: '10mb',
+    parameterLimit: 100, // Limit number of parameters to prevent DoS
+  })
+);
+
+// Request logging middleware (before input sanitization)
 app.use(requestLogger);
 
+// Input sanitization middleware (after request parsing, before routes)
+app.use(sanitizeAllInputs);
+
 // Health check endpoint (before authentication)
-app.get('/health', async (req, res) => {
+app.get('/health', setCSRFToken, async (req, res) => {
   const healthCheck = {
     status: 'OK',
     timestamp: new Date().toISOString(),
@@ -149,7 +158,7 @@ app.get('/health', async (req, res) => {
 });
 
 // API base endpoint
-app.get('/api', (req, res) => {
+app.get('/api', setCSRFToken, (req, res) => {
   res.json({
     success: true,
     data: {
@@ -173,12 +182,15 @@ import documentRoutes from './routes/documentRoutes.js';
 import referenceRoutes from './routes/referenceRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 
-// Mount API routes
-app.use('/api/aadhar', aadharRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/documents', documentRoutes);
-app.use('/api/references', referenceRoutes);
-app.use('/api/admin', adminRoutes);
+// Import CSRF protection middleware
+import { conditionalCSRFProtection } from './middleware/csrfProtection.js';
+
+// Mount API routes with CSRF protection for authenticated routes
+app.use('/api/aadhar', aadharRoutes); // Public route - no CSRF needed
+app.use('/api/users', conditionalCSRFProtection, userRoutes); // CSRF for authenticated users
+app.use('/api/documents', conditionalCSRFProtection, documentRoutes); // CSRF for authenticated users
+app.use('/api/references', conditionalCSRFProtection, referenceRoutes); // CSRF for authenticated users
+app.use('/api/admin', conditionalCSRFProtection, adminRoutes); // CSRF for authenticated admins
 
 // 404 handler (must be after all routes)
 app.use('*', notFoundHandler);
@@ -186,34 +198,113 @@ app.use('*', notFoundHandler);
 // Global error handler (must be last)
 app.use(errorHandler);
 
-// Graceful shutdown handling
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  process.exit(0);
-});
+// Enhanced graceful shutdown handling
+let server: any;
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  process.exit(0);
-});
+const gracefulShutdown = (signal: string) => {
+  logger.info(`${signal} received, initiating graceful shutdown`);
 
-// Unhandled promise rejection handler
+  if (server) {
+    server.close((err: any) => {
+      if (err) {
+        logger.error('Error during server shutdown', {
+          error: err.message,
+          stack: err.stack,
+        });
+        process.exit(1);
+      }
+
+      logger.info('Server closed successfully');
+
+      // Close database connections, cleanup resources, etc.
+      // Add any cleanup logic here
+
+      process.exit(0);
+    });
+
+    // Force shutdown after 30 seconds
+    setTimeout(() => {
+      logger.error('Forced shutdown after timeout');
+      process.exit(1);
+    }, 30000);
+  } else {
+    process.exit(0);
+  }
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Enhanced unhandled promise rejection handler
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Promise Rejection', {
+  logger.error('Unhandled Promise Rejection - Critical Error', {
     reason: reason instanceof Error ? reason.message : reason,
     stack: reason instanceof Error ? reason.stack : undefined,
-    promise,
+    promise: promise.toString(),
+    timestamp: new Date().toISOString(),
+    alertType: 'CRITICAL',
+    severity: 'HIGH',
   });
+
+  // In production, we might want to restart the process
+  if (process.env.NODE_ENV === 'production') {
+    logger.error(
+      'Unhandled promise rejection in production - initiating shutdown'
+    );
+    gracefulShutdown('UNHANDLED_REJECTION');
+  }
 });
 
-// Uncaught exception handler
+// Enhanced uncaught exception handler
 process.on('uncaughtException', error => {
-  logger.error('Uncaught Exception', {
+  logger.error('Uncaught Exception - Critical Error', {
     error: error.message,
     stack: error.stack,
+    timestamp: new Date().toISOString(),
+    alertType: 'CRITICAL',
+    severity: 'HIGH',
   });
+
+  // Uncaught exceptions are serious - always exit
+  logger.error('Uncaught exception detected - shutting down immediately');
   process.exit(1);
 });
+
+// Memory usage monitoring
+const monitorMemoryUsage = () => {
+  const usage = process.memoryUsage();
+  const usageInMB = {
+    rss: Math.round(usage.rss / 1024 / 1024),
+    heapTotal: Math.round(usage.heapTotal / 1024 / 1024),
+    heapUsed: Math.round(usage.heapUsed / 1024 / 1024),
+    external: Math.round(usage.external / 1024 / 1024),
+  };
+
+  // Log memory usage every 5 minutes
+  logger.debug('Memory usage', usageInMB);
+
+  // Alert on high memory usage
+  if (usageInMB.heapUsed > 500) {
+    // 500MB
+    logger.warn('High memory usage detected', {
+      ...usageInMB,
+      alertType: 'PERFORMANCE',
+      severity: 'MEDIUM',
+    });
+  }
+
+  if (usageInMB.heapUsed > 1000) {
+    // 1GB
+    logger.error('Very high memory usage detected', {
+      ...usageInMB,
+      alertType: 'PERFORMANCE',
+      severity: 'HIGH',
+    });
+  }
+};
+
+// Monitor memory usage every 5 minutes
+setInterval(monitorMemoryUsage, 5 * 60 * 1000);
 
 // Start server
 const startServer = async () => {
@@ -236,8 +327,8 @@ const startServer = async () => {
       );
     }
 
-    // Start listening
-    app.listen(PORT, () => {
+    // Start listening and store server reference for graceful shutdown
+    server = app.listen(PORT, () => {
       logger.info('Server started successfully', {
         port: PORT,
         environment: process.env.NODE_ENV || 'development',

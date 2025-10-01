@@ -7,6 +7,10 @@ import {
 } from '../utils/jwt.js';
 import { AppError } from './errorHandler.js';
 import logger from '../config/logger.js';
+import {
+  securityAudit,
+  SecurityEventType,
+} from '../services/securityAuditService.js';
 
 // Extend Express Request interface to include user information
 declare global {
@@ -61,6 +65,15 @@ export const authenticateUser = (
       ip: req.ip,
       userAgent: req.get('User-Agent'),
     });
+
+    // Log security event for authentication failure
+    securityAudit.logAuthenticationEvent(
+      req,
+      false,
+      undefined,
+      error instanceof Error ? error.message : 'Unknown error'
+    );
+
     next(error);
   }
 };
@@ -107,6 +120,15 @@ export const authenticateAdmin = (
       ip: req.ip,
       userAgent: req.get('User-Agent'),
     });
+
+    // Log security event for admin authentication failure
+    securityAudit.logAuthenticationEvent(
+      req,
+      false,
+      undefined,
+      error instanceof Error ? error.message : 'Unknown error'
+    );
+
     next(error);
   }
 };
@@ -157,6 +179,15 @@ export const requireRole = (
         requiredRoles: allowedRoles,
         ip: req.ip,
       });
+
+      // Log security event for authorization failure
+      securityAudit.logAuthorizationEvent(
+        req,
+        false,
+        allowedRoles.join(','),
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+
       next(error);
     }
   };

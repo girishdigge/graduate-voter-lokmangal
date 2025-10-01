@@ -7,7 +7,7 @@ const http = require('http');
 
 // Test configuration
 const BASE_URL = 'localhost';
-const PORT = 3001;
+const PORT = 3000;
 const TEST_ADMIN = {
   username: 'admin',
   password: 'Admin@123',
@@ -356,7 +356,7 @@ async function checkServerHealth() {
     }
   } catch (error) {
     console.log('❌ Cannot connect to server');
-    console.log('   Please make sure the server is running on port 3001');
+    console.log('   Please make sure the server is running on port 3000');
     return false;
   }
 }
@@ -383,7 +383,7 @@ async function runAllTests() {
     }
   } catch (error) {
     console.log('❌ Cannot connect to server');
-    console.log('   Please make sure the server is running on port 3001');
+    console.log('   Please make sure the server is running on port 3000');
     process.exit(1);
   }
 

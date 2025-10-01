@@ -114,9 +114,9 @@ npm run dev
 Or start individual applications:
 
 ```bash
-npm run dev:backend    # Backend API (port 3001)
-npm run dev:public     # Public portal (port 3000)
-npm run dev:admin      # Admin dashboard (port 3002)
+npm run dev:backend    # Backend API (port 3000)
+npm run dev:public     # Public portal (port 5173)
+npm run dev:admin      # Admin dashboard (port 5174)
 ```
 
 ### Building for Production

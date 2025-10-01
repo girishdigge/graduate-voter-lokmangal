@@ -41,7 +41,7 @@ async function testAdminLogin() {
 
   const options = {
     hostname: 'localhost',
-    port: 3001,
+    port: 3000,
     path: '/api/admin/login',
     method: 'POST',
     headers: {
@@ -78,7 +78,7 @@ async function testAdminProfile(token) {
 
   const options = {
     hostname: 'localhost',
-    port: 3001,
+    port: 3000,
     path: '/api/admin/profile',
     method: 'GET',
     headers: {

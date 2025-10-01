@@ -5,7 +5,7 @@
 
 import fetch from 'node-fetch';
 
-const BASE_URL = 'http://localhost:3001/api';
+const BASE_URL = 'http://localhost:3000/api';
 
 // Test configuration
 const TEST_ADMIN = {
@@ -305,7 +305,7 @@ async function checkServerHealth() {
     }
   } catch (error) {
     console.log(
-      '❌ Cannot connect to server. Please make sure the server is running on port 3001'
+      '❌ Cannot connect to server. Please make sure the server is running on port 3000'
     );
     console.log('   Run: npm run dev (in the backend directory)');
     return false;

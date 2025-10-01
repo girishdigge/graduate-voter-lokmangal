@@ -6,6 +6,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
 import EnrollmentPage from './pages/EnrollmentPage';
 import DashboardPage from './pages/DashboardPage';
+import TestPage from './pages/TestPage';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -25,7 +26,8 @@ function App() {
           <Layout>
             <Routes>
               {/* Public Routes */}
-              <Route path="/" element={<LandingPage />} />
+              <Route path="/" element={<TestPage />} />
+              <Route path="/landing" element={<LandingPage />} />
               <Route path="/enroll" element={<EnrollmentPage />} />
 
               {/* Protected Routes */}
@@ -39,7 +41,7 @@ function App() {
               />
 
               {/* Catch all route - redirect to home */}
-              <Route path="*" element={<LandingPage />} />
+              <Route path="*" element={<TestPage />} />
             </Routes>
           </Layout>
         </Router>

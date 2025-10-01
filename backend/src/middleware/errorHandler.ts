@@ -140,15 +140,62 @@ export const errorHandler = (
     }
   }
 
-  // Don't expose internal error details in production
-  if (
-    process.env.NODE_ENV === 'production' &&
-    !err.message.startsWith('SAFE:')
-  ) {
-    if (statusCode === 500) {
-      message = 'Internal server error';
+  // Enhanced security: Don't expose internal error details in production
+  if (process.env.NODE_ENV === 'production') {
+    // Only expose safe error messages in production
+    if (statusCode === 500 || !err.message.startsWith('SAFE:')) {
+      // Generic error messages for production
+      switch (statusCode) {
+        case 400:
+          message = 'Bad request';
+          break;
+        case 401:
+          message = 'Authentication required';
+          break;
+        case 403:
+          message = 'Access forbidden';
+          break;
+        case 404:
+          message = 'Resource not found';
+          break;
+        case 429:
+          message = 'Too many requests';
+          break;
+        case 500:
+        default:
+          message = 'Internal server error';
+          break;
+      }
+
+      // Remove sensitive details in production
       details = undefined;
+
+      // Log the actual error details for debugging (but don't expose to client)
+      logger.error('Production error details (not exposed to client)', {
+        requestId,
+        actualError: err.message,
+        actualDetails: details,
+        stack: err.stack,
+        url: req.url,
+        method: req.method,
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
     }
+
+    // Remove stack traces in production
+    if (err.stack) {
+      logger.error('Stack trace (production)', {
+        requestId,
+        stack: err.stack,
+      });
+    }
+  }
+
+  // Additional security: Sanitize error messages to prevent XSS
+  if (typeof message === 'string') {
+    // Remove potentially dangerous characters from error messages
+    message = message.replace(/[<>\"'&]/g, '');
   }
 
   const errorResponse: ErrorResponse = {

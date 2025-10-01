@@ -46,7 +46,7 @@ export const validateEnvironment = (): void => {
   // Log configuration status
   logger.info('Environment validation completed', {
     nodeEnv: process.env.NODE_ENV || 'development',
-    port: process.env.PORT || 3001,
+    port: process.env.PORT || 3000,
     hasDatabase: !!process.env.DATABASE_URL,
     hasJwtSecret: !!process.env.JWT_SECRET,
     hasAwsCredentials: !!(
@@ -61,7 +61,7 @@ export const validateEnvironment = (): void => {
 export const getConfig = () => {
   return {
     // Server
-    port: parseInt(process.env.PORT || '3001', 10),
+    port: parseInt(process.env.PORT || '3000', 10),
     nodeEnv: process.env.NODE_ENV || 'development',
 
     // Database
