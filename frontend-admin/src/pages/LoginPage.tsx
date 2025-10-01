@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { LoginCredentials } from '../types/auth';
+import type { LoginCredentials } from '../types/auth';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
