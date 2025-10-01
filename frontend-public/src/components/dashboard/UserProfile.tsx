@@ -25,8 +25,8 @@ interface UserData {
   assemblyNumber?: string;
   assemblyName?: string;
   pollingStationNumber?: string;
-  electorDob?: string;
   epicNumber?: string;
+  disabilities?: string;
   university: string;
   graduationYear: string;
   graduationDocumentType: string;
@@ -64,9 +64,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   };
 
   const qualificationOptions = [
-    { value: 'BELOW_10TH', label: 'Below 10th' },
-    { value: '10TH_PASS', label: '10th Pass' },
-    { value: '12TH_PASS', label: '12th Pass' },
     { value: 'GRADUATE', label: 'Graduate' },
     { value: 'POST_GRADUATE', label: 'Post Graduate' },
     { value: 'PROFESSIONAL', label: 'Professional' },
@@ -495,28 +492,40 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               </div>
             )}
 
-            {/* Elector DOB */}
-            {isEditing ? (
-              <Input
-                label="Elector Date of Birth"
-                type="date"
-                value={userData.electorDob || ''}
-                onChange={e => handleInputChange('electorDob', e.target.value)}
-                disabled={disabled}
-                required
-              />
-            ) : (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Elector Date of Birth
-                </label>
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  {userData.electorDob
-                    ? new Date(userData.electorDob).toLocaleDateString('en-IN')
-                    : 'Not provided'}
-                </div>
+            {/* Disabilities */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Disability, If Any
+              </label>
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                {userData.disabilities
+                  ? (() => {
+                      try {
+                        const disabilityList = JSON.parse(
+                          userData.disabilities
+                        );
+                        const disabilityLabels = {
+                          VISUAL_IMPAIRMENT: 'Visual Impairment',
+                          SPEECH_AND_HEARING_DISABILITY:
+                            'Speech and Hearing Disability',
+                          LOCOMOTOR_DISABILITY: 'Locomotor Disability',
+                          OTHER: 'Other',
+                        };
+                        return disabilityList
+                          .map(
+                            (d: string) =>
+                              disabilityLabels[
+                                d as keyof typeof disabilityLabels
+                              ] || d
+                          )
+                          .join(', ');
+                      } catch {
+                        return userData.disabilities;
+                      }
+                    })()
+                  : 'None'}
               </div>
-            )}
+            </div>
 
             {/* EPIC Number */}
             {isEditing ? (

@@ -14,7 +14,7 @@ const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-orange-100 to-green-200">
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center">
           {/* Header */}
@@ -40,13 +40,17 @@ const LandingPage: React.FC = () => {
               Enter your Aadhar number to check if you're already registered or
               to begin enrollment
             </p>
-            <Button size="lg" className="px-8" onClick={handleOpenModal}>
+            <Button
+              size="lg"
+              className="px-8 animate-scale-pop btn-custom-bg "
+              onClick={handleOpenModal}
+            >
               Check Aadhar & Register
             </Button>
           </div>
 
           {/* Features */}
-          <div className="grid md:grid-cols-3 gap-8">
+          {/* <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white rounded-lg p-6 shadow-md">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <svg
@@ -118,7 +122,7 @@ const LandingPage: React.FC = () => {
                 Reference-based verification system
               </p>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 

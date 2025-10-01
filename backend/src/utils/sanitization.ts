@@ -180,21 +180,23 @@ export const sanitizeRequestBody = (
       // Log if significant sanitization occurred
       if (originalBody !== sanitizedBody) {
         logger.warn('Request body sanitization performed', {
-          requestId: req.requestId,
+          requestId: req.requestId || 'unknown',
           url: req.url,
           method: req.method,
-          ip: req.ip,
-          userAgent: req.get('User-Agent'),
+          ip: req.ip || 'unknown',
+          userAgent: req.get('User-Agent') || 'unknown',
           sanitizationPerformed: true,
         });
 
-        // Log security event for input sanitization
-        securityAudit.logInputValidationEvent(
-          req,
-          SecurityEventType.INPUT_SANITIZATION,
-          'Request body sanitization performed',
-          true
-        );
+        // Only log security event if request has been properly initialized
+        if (req.requestId) {
+          securityAudit.logInputValidationEvent(
+            req,
+            SecurityEventType.INPUT_SANITIZATION,
+            'Request body sanitization performed',
+            true
+          );
+        }
       }
     }
 
@@ -202,10 +204,10 @@ export const sanitizeRequestBody = (
   } catch (error) {
     logger.error('Error in request body sanitization', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      requestId: req.requestId,
+      requestId: req.requestId || 'unknown',
       url: req.url,
       method: req.method,
-      ip: req.ip,
+      ip: req.ip || 'unknown',
     });
 
     next(error);
@@ -223,27 +225,32 @@ export const sanitizeQueryParams = (
   try {
     if (req.query && typeof req.query === 'object') {
       const originalQuery = JSON.stringify(req.query);
-      req.query = sanitizeObject(req.query);
-      const sanitizedQuery = JSON.stringify(req.query);
+      const sanitizedQuery = sanitizeObject(req.query);
+      const sanitizedQueryStr = JSON.stringify(sanitizedQuery);
+
+      // Store sanitized query in a custom property instead of modifying req.query
+      (req as any).sanitizedQuery = sanitizedQuery;
 
       // Log if significant sanitization occurred
-      if (originalQuery !== sanitizedQuery) {
+      if (originalQuery !== sanitizedQueryStr) {
         logger.warn('Query parameters sanitization performed', {
-          requestId: req.requestId,
+          requestId: req.requestId || 'unknown',
           url: req.url,
           method: req.method,
-          ip: req.ip,
-          userAgent: req.get('User-Agent'),
+          ip: req.ip || 'unknown',
+          userAgent: req.get('User-Agent') || 'unknown',
           sanitizationPerformed: true,
         });
 
-        // Log security event for input sanitization
-        securityAudit.logInputValidationEvent(
-          req,
-          SecurityEventType.INPUT_SANITIZATION,
-          'Query parameters sanitization performed',
-          true
-        );
+        // Only log security event if request has been properly initialized
+        if (req.requestId) {
+          securityAudit.logInputValidationEvent(
+            req,
+            SecurityEventType.INPUT_SANITIZATION,
+            'Query parameters sanitization performed',
+            true
+          );
+        }
       }
     }
 
@@ -251,10 +258,10 @@ export const sanitizeQueryParams = (
   } catch (error) {
     logger.error('Error in query parameters sanitization', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      requestId: req.requestId,
+      requestId: req.requestId || 'unknown',
       url: req.url,
       method: req.method,
-      ip: req.ip,
+      ip: req.ip || 'unknown',
     });
 
     next(error);
@@ -278,21 +285,23 @@ export const sanitizeUrlParams = (
       // Log if significant sanitization occurred
       if (originalParams !== sanitizedParams) {
         logger.warn('URL parameters sanitization performed', {
-          requestId: req.requestId,
+          requestId: req.requestId || 'unknown',
           url: req.url,
           method: req.method,
-          ip: req.ip,
-          userAgent: req.get('User-Agent'),
+          ip: req.ip || 'unknown',
+          userAgent: req.get('User-Agent') || 'unknown',
           sanitizationPerformed: true,
         });
 
-        // Log security event for input sanitization
-        securityAudit.logInputValidationEvent(
-          req,
-          SecurityEventType.INPUT_SANITIZATION,
-          'URL parameters sanitization performed',
-          true
-        );
+        // Only log security event if request has been properly initialized
+        if (req.requestId) {
+          securityAudit.logInputValidationEvent(
+            req,
+            SecurityEventType.INPUT_SANITIZATION,
+            'URL parameters sanitization performed',
+            true
+          );
+        }
       }
     }
 
@@ -300,10 +309,10 @@ export const sanitizeUrlParams = (
   } catch (error) {
     logger.error('Error in URL parameters sanitization', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      requestId: req.requestId,
+      requestId: req.requestId || 'unknown',
       url: req.url,
       method: req.method,
-      ip: req.ip,
+      ip: req.ip || 'unknown',
     });
 
     next(error);

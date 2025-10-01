@@ -106,7 +106,7 @@ Successfully implemented comprehensive admin dashboard statistics and voter mana
 - Personal: fullName, sex, guardianSpouse, qualification, occupation
 - Contact: contact, email
 - Address: houseNumber, street, area, city, state, pincode
-- Elector: isRegisteredElector, assemblyNumber, assemblyName, pollingStationNumber, electorDob, epicNumber
+- Elector: isRegisteredElector, assemblyNumber, assemblyName, pollingStationNumber, epicNumber, disabilities
 - Education: university, graduationYear, graduationDocType
 
 ## Service Layer Implementation

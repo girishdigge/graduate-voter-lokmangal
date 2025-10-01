@@ -48,7 +48,7 @@ const AddressSection: React.FC<AddressSectionProps> = ({
         <Input
           label="City *"
           placeholder="City"
-          defaultValue="PUNE"
+          defaultValue="Pune"
           {...register('address.city')}
           error={errors.address?.city?.message}
           helperText="Default city is set to PUNE"
@@ -57,6 +57,7 @@ const AddressSection: React.FC<AddressSectionProps> = ({
         <Input
           label="State *"
           placeholder="Enter state"
+          defaultValue="Maharashtra"
           {...register('address.state')}
           error={errors.address?.state?.message}
         />

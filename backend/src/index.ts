@@ -68,7 +68,7 @@ app.use(generalLimiter);
 app.use(
   express.json({
     limit: '10mb',
-    verify: (req: any, res, buf) => {
+    verify: (req: any, _res, buf) => {
       // Enhanced payload monitoring
       const sizeInMB = buf.length / (1024 * 1024);
 
@@ -112,8 +112,8 @@ app.use(requestLogger);
 // Input sanitization middleware (after request parsing, before routes)
 app.use(sanitizeAllInputs);
 
-// Health check endpoint (before authentication)
-app.get('/health', setCSRFToken, async (req, res) => {
+// Health check function
+const healthCheckHandler = async (_req: any, res: any) => {
   const healthCheck = {
     status: 'OK',
     timestamp: new Date().toISOString(),
@@ -155,10 +155,14 @@ app.get('/health', setCSRFToken, async (req, res) => {
   );
 
   res.status(isHealthy ? 200 : 503).json(healthCheck);
-});
+};
+
+// Health check endpoints (both /health and /api/health for compatibility)
+app.get('/health', setCSRFToken, healthCheckHandler);
+app.get('/api/health', setCSRFToken, healthCheckHandler);
 
 // API base endpoint
-app.get('/api', setCSRFToken, (req, res) => {
+app.get('/api', setCSRFToken, (_req, res) => {
   res.json({
     success: true,
     data: {

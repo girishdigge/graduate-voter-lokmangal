@@ -745,11 +745,6 @@ export const updateUserByAdmin = async (
       updateFields.age = calculateAge(updateFields.dateOfBirth);
     }
 
-    // Convert elector DOB if provided
-    if (updateFields.electorDob) {
-      updateFields.electorDob = new Date(updateFields.electorDob);
-    }
-
     // Check for contact number conflicts (if being updated)
     if (updateFields.contact && updateFields.contact !== currentUser.contact) {
       const existingContact = await prisma.user.findFirst({
@@ -815,8 +810,8 @@ export const updateUserByAdmin = async (
         assemblyNumber: true,
         assemblyName: true,
         pollingStationNumber: true,
-        electorDob: true,
         epicNumber: true,
+        disabilities: true,
         university: true,
         graduationYear: true,
         graduationDocType: true,

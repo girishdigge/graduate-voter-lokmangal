@@ -142,6 +142,7 @@ const AadharCheckModal: React.FC<AadharCheckModalProps> = ({
           </Button>
           <Button
             type="submit"
+            className="btn-custom-bg "
             loading={isLoading}
             disabled={!aadharNumber || aadharNumber.length !== 12}
           >

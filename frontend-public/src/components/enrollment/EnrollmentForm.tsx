@@ -27,12 +27,14 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({
     handleSubmit,
     watch,
     trigger,
+    setValue,
     formState: { errors, isValid },
   } = useForm<EnrollmentFormData>({
     resolver: zodResolver(enrollmentFormSchema),
     defaultValues: {
       address: {
-        city: 'PUNE',
+        city: 'Pune',
+        state: 'Maharashtra',
       },
       elector: {
         isRegisteredElector: false,
@@ -80,15 +82,20 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({
     {
       title: 'Elector Information',
       component: (
-        <ElectorSection register={register} errors={errors} watch={watch} />
+        <ElectorSection
+          register={register}
+          errors={errors}
+          watch={watch}
+          setValue={setValue}
+        />
       ),
       fields: [
         'elector.isRegisteredElector',
         'elector.assemblyNumber',
         'elector.assemblyName',
         'elector.pollingStationNumber',
-        'elector.electorDob',
         'elector.epicNumber',
+        'elector.disabilities',
       ] as const,
     },
     {

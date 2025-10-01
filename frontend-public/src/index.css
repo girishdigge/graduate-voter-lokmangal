@@ -1,5 +1,29 @@
 @import 'tailwindcss';
 
+/* Custom theme configuration */
+@theme {
+  --tw-color-primary: #ef7722;
+  --tw-color-secondary: #334155;
+  --animate-scale-pop: scale-pop 2s ease-in-out infinite;
+}
+@layer components {
+  /* Define a custom class that forces the background color */
+  .btn-custom-bg {
+    /* Use !important to override the component's internal style */
+    background-color: var(--tw-color-primary) !important;
+  }
+}
+
+@keyframes scale-pop {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
 /* Base styles */
 * {
   box-sizing: border-box;
@@ -34,7 +58,7 @@ body {
 
 /* Focus styles for accessibility */
 *:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid #b6f500;
   outline-offset: 2px;
 }
 

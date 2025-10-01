@@ -249,13 +249,34 @@ export const VoterDetailModal: React.FC<VoterDetailModalProps> = ({
                     </p>
                   </div>
                 )}
-                {voter.electorDob && (
+                {voter.disabilities && (
                   <div>
                     <label className="text-sm font-medium text-gray-500">
-                      Elector DOB
+                      Disabilities
                     </label>
                     <p className="text-gray-900">
-                      {formatDate(voter.electorDob)}
+                      {(() => {
+                        try {
+                          const disabilityList = JSON.parse(voter.disabilities);
+                          const disabilityLabels = {
+                            VISUAL_IMPAIRMENT: 'Visual Impairment',
+                            SPEECH_AND_HEARING_DISABILITY:
+                              'Speech and Hearing Disability',
+                            LOCOMOTOR_DISABILITY: 'Locomotor Disability',
+                            OTHER: 'Other',
+                          };
+                          return disabilityList
+                            .map(
+                              (d: string) =>
+                                disabilityLabels[
+                                  d as keyof typeof disabilityLabels
+                                ] || d
+                            )
+                            .join(', ');
+                        } catch {
+                          return voter.disabilities;
+                        }
+                      })()}
                     </p>
                   </div>
                 )}

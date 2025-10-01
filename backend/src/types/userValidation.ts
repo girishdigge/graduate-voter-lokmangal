@@ -115,7 +115,7 @@ export const userEnrollmentSchema = z
       ),
 
     sex: z.nativeEnum(Sex, {
-      errorMap: () => ({ message: 'Sex must be MALE, FEMALE, or OTHER' }),
+      message: 'Sex must be MALE, FEMALE, or OTHER',
     }),
 
     guardianSpouse: z
@@ -183,15 +183,11 @@ export const userEnrollmentSchema = z
       .optional()
       .or(z.literal('')),
     pollingStationNumber: pollingStationSchema,
-    electorDob: z
-      .string()
-      .transform(val => (val ? new Date(val) : undefined))
-      .refine(
-        date => !date || !isNaN(date.getTime()),
-        'Invalid elector date of birth format'
-      )
-      .optional(),
     epicNumber: epicNumberSchema,
+    disabilities: z
+      .array(z.string())
+      .optional()
+      .transform(val => (val ? JSON.stringify(val) : null)),
 
     // Education Information
     university: z
@@ -245,19 +241,7 @@ export const userEnrollmentSchema = z
       path: ['pollingStationNumber'],
     }
   )
-  .refine(
-    data => {
-      // If registered elector, elector DOB is required
-      if (data.isRegisteredElector && !data.electorDob) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: 'Elector date of birth is required for registered electors',
-      path: ['electorDob'],
-    }
-  )
+
   .refine(
     data => {
       // If registered elector, EPIC number is required
@@ -305,8 +289,8 @@ export const transformEnrollmentData = (data: UserEnrollmentData) => {
     assemblyNumber: data.assemblyNumber?.trim() || null,
     assemblyName: data.assemblyName?.trim() || null,
     pollingStationNumber: data.pollingStationNumber?.trim() || null,
-    electorDob: data.electorDob || null,
     epicNumber: data.epicNumber?.trim() || null,
+    disabilities: data.disabilities || null,
     university: data.university?.trim() || null,
     graduationYear: data.graduationYear || null,
     graduationDocType: data.graduationDocType?.trim() || null,

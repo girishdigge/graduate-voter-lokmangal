@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const personalInfoSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
   sex: z.enum(['MALE', 'FEMALE', 'OTHER'], {
-    required_error: 'Please select your sex',
+    message: 'Please select your sex',
   }),
   guardianSpouse: z
     .string()
@@ -39,8 +39,8 @@ export const electorSchema = z
     assemblyNumber: z.string().optional(),
     assemblyName: z.string().optional(),
     pollingStationNumber: z.string().optional(),
-    electorDob: z.string().optional(),
     epicNumber: z.string().optional(),
+    disabilities: z.array(z.string()).optional(),
   })
   .refine(
     data => {
@@ -49,7 +49,6 @@ export const electorSchema = z
           data.assemblyNumber &&
           data.assemblyName &&
           data.pollingStationNumber &&
-          data.electorDob &&
           data.epicNumber
         );
       }
@@ -72,7 +71,7 @@ export const educationSchema = z.object({
   graduationDocumentType: z.enum(
     ['DEGREE_CERTIFICATE', 'DIPLOMA', 'MARKSHEET', 'OTHER'],
     {
-      required_error: 'Please select document type',
+      message: 'Please select document type',
     }
   ),
 });

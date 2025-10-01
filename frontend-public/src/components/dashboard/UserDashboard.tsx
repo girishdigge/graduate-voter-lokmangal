@@ -30,8 +30,8 @@ interface UserData {
   assemblyNumber?: string;
   assemblyName?: string;
   pollingStationNumber?: string;
-  electorDob?: string;
   epicNumber?: string;
+  disabilities?: string;
   university: string;
   graduationYear: string;
   graduationDocumentType: string;

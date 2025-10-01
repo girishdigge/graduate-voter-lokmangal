@@ -32,12 +32,14 @@ model User {
     pincode     String @db.VarChar(10)
 
     // Elector Information (optional)
-    isRegisteredElector  Boolean   @default(false) @map("is_registered_elector")
-    assemblyNumber       String?   @map("assembly_number") @db.VarChar(10)
-    assemblyName         String?   @map("assembly_name") @db.VarChar(255)
-    pollingStationNumber String?   @map("polling_station_number") @db.VarChar(10)
-    electorDob           DateTime? @map("elector_dob") @db.Date
-    epicNumber           String?   @map("epic_number") @db.VarChar(20)
+    isRegisteredElector  Boolean @default(false) @map("is_registered_elector")
+    assemblyNumber       String? @map("assembly_number") @db.VarChar(10)
+    assemblyName         String? @map("assembly_name") @db.VarChar(255)
+    pollingStationNumber String? @map("polling_station_number") @db.VarChar(10)
+    epicNumber           String? @map("epic_number") @db.VarChar(20)
+
+    // Disability Information (optional)
+    disabilities String? @map("disabilities") @db.Text
 
     // Education Information
     university        String? @db.VarChar(255)

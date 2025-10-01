@@ -24,8 +24,8 @@ export interface Voter {
   assemblyNumber?: string;
   assemblyName?: string;
   pollingStationNumber?: string;
-  electorDob?: string;
   epicNumber?: string;
+  disabilities?: string;
 
   // Education Information
   university?: string;

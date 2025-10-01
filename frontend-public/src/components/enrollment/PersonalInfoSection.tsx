@@ -18,9 +18,6 @@ const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
   const age = watchDateOfBirth ? calculateAge(watchDateOfBirth) : 0;
 
   const qualificationOptions = [
-    { value: 'BELOW_10TH', label: 'Below 10th' },
-    { value: '10TH_PASS', label: '10th Pass' },
-    { value: '12TH_PASS', label: '12th Pass' },
     { value: 'GRADUATE', label: 'Graduate' },
     { value: 'POST_GRADUATE', label: 'Post Graduate' },
     { value: 'PROFESSIONAL', label: 'Professional Degree' },

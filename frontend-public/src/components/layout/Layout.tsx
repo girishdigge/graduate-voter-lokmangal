@@ -16,7 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 Padhvidhar Matdar Sangh
               </h1>
             </div>
-            <nav className="hidden md:flex space-x-6">
+            {/* <nav className="hidden md:flex space-x-6">
               <a
                 href="/"
                 className="text-gray-600 hover:text-gray-900 transition-colors"
@@ -35,7 +35,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               >
                 Contact
               </a>
-            </nav>
+            </nav> */}
           </div>
         </div>
       </header>
@@ -44,11 +44,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <main className="flex-1">{children}</main>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-8">
+      <footer className="bg-[#EF7722] text-white py-8">
         <div className="container mx-auto px-4">
           <div className="text-center">
-            <p className="text-gray-300">
-              © 2024 Padhvidhar Matdar Sangh. All rights reserved.
+            <p className="text-black text-md">
+              © {new Date().getFullYear()} Oskartech. All rights reserved.
             </p>
           </div>
         </div>
