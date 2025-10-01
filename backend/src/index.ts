@@ -193,7 +193,7 @@ app.use('/api/references', conditionalCSRFProtection, referenceRoutes); // CSRF 
 app.use('/api/admin', conditionalCSRFProtection, adminRoutes); // CSRF for authenticated admins
 
 // 404 handler (must be after all routes)
-app.use('*', notFoundHandler);
+app.use(notFoundHandler);
 
 // Global error handler (must be last)
 app.use(errorHandler);
