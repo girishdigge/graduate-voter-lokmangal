@@ -35,7 +35,7 @@ export const checkAadhar = async (
     const validationResult = aadharCheckSchema.safeParse(req.body);
 
     if (!validationResult.success) {
-      const errors = validationResult.error.errors.map(err => ({
+      const errors = validationResult.error.issues.map(err => ({
         field: err.path.join('.'),
         message: err.message,
       }));

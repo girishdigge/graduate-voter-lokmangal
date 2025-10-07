@@ -482,6 +482,110 @@ export const getUserReferences = async (userId: string) => {
 };
 
 /**
+ * Get all references with filtering and pagination (for admin use)
+ */
+export const getAllReferencesWithFilters = async (
+  page: number,
+  limit: number,
+  status?: ReferenceStatus,
+  search?: string
+) => {
+  try {
+    // Build where clause
+    const where: any = {};
+
+    if (status && Object.values(ReferenceStatus).includes(status)) {
+      where.status = status;
+    }
+
+    if (search && search.trim()) {
+      const searchTerm = search.trim();
+      // Split search into words for relaxed matching
+      const searchWords = searchTerm
+        .split(/\s+/)
+        .filter(word => word.length > 0);
+
+      // Build OR conditions for each search word (relaxed matching)
+      const searchConditions = searchWords.flatMap(word => [
+        { referenceName: { contains: word, mode: 'insensitive' } },
+        { referenceContact: { contains: word } },
+        { user: { fullName: { contains: word, mode: 'insensitive' } } },
+      ]);
+
+      where.OR = searchConditions;
+    }
+
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+
+    // Get references with pagination
+    const [references, total] = await Promise.all([
+      prisma.reference.findMany({
+        where,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          referenceName: true,
+          referenceContact: true,
+          status: true,
+          whatsappSent: true,
+          whatsappSentAt: true,
+          statusUpdatedAt: true,
+          createdAt: true,
+          updatedAt: true,
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              contact: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      prisma.reference.count({ where }),
+    ]);
+
+    logger.info('All references retrieved', {
+      page,
+      limit,
+      status: status || 'all',
+      search: search ? 'provided' : 'none',
+      total,
+      returned: references.length,
+    });
+
+    return {
+      success: true,
+      references,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    logger.error('Error retrieving all references', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      page,
+      limit,
+      status,
+      search,
+    });
+
+    throw new AppError(
+      'Failed to retrieve references',
+      500,
+      'REFERENCE_FETCH_FAILED'
+    );
+  }
+};
+
+/**
  * Update reference status (for admin use)
  */
 export const updateReferenceStatus = async (

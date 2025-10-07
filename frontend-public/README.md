@@ -87,7 +87,7 @@ src/
 
 ## Environment Variables
 
-- `VITE_API_URL`: Backend API URL
+- `API_URL`: Backend API URL
 - `VITE_APP_NAME`: Application name
 - `VITE_MAX_FILE_SIZE`: Maximum file upload size
 - `VITE_ALLOWED_FILE_TYPES`: Allowed file types for uploads

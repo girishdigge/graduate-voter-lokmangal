@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 // Mock environment variables
 Object.defineProperty(window, 'env', {
   value: {
-    VITE_API_URL: 'http://localhost:3000/api',
+    API_URL: 'http://localhost:3000/api',
   },
 });
 

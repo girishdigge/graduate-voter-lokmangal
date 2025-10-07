@@ -12,7 +12,7 @@ const TestPage: React.FC = () => {
         </p>
         <div className="space-y-2 text-sm">
           <p>
-            <strong>API URL:</strong> {import.meta.env.VITE_API_URL}
+            <strong>API URL:</strong> {import.meta.env.API_URL}
           </p>
           <p>
             <strong>Environment:</strong> {import.meta.env.MODE}
@@ -21,7 +21,7 @@ const TestPage: React.FC = () => {
         <button
           onClick={() => {
             fetch(
-              `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/health`
+              `${import.meta.env.API_URL || 'http://localhost:3000/api'}/health`
             )
               .then(res => res.json())
               .then(data => {

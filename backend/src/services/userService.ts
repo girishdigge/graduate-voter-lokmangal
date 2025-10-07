@@ -191,37 +191,37 @@ export const createUserEnrollment = async (
       );
     }
 
-    // Check if contact number already exists for a different user
-    const existingContact = await prisma.user.findFirst({
-      where: {
-        contact: userData.contact,
-      },
-    });
+    // // Check if contact number already exists for a different user
+    // const existingContact = await prisma.user.findFirst({
+    //   where: {
+    //     contact: userData.contact,
+    //   },
+    // });
 
-    if (existingContact) {
-      throw new AppError(
-        'Contact number already registered with another account',
-        409,
-        'CONTACT_ALREADY_EXISTS'
-      );
-    }
+    // if (existingContact) {
+    //   throw new AppError(
+    //     'Contact number already registered with another account',
+    //     409,
+    //     'CONTACT_ALREADY_EXISTS'
+    //   );
+    // }
 
-    // Check if email already exists (if provided)
-    if (userData.email) {
-      const existingEmail = await prisma.user.findFirst({
-        where: {
-          email: userData.email,
-        },
-      });
+    // // Check if email already exists (if provided)
+    // if (userData.email) {
+    //   const existingEmail = await prisma.user.findFirst({
+    //     where: {
+    //       email: userData.email,
+    //     },
+    //   });
 
-      if (existingEmail) {
-        throw new AppError(
-          'Email address already registered with another account',
-          409,
-          'EMAIL_ALREADY_EXISTS'
-        );
-      }
-    }
+    //   if (existingEmail) {
+    //     throw new AppError(
+    //       'Email address already registered with another account',
+    //       409,
+    //       'EMAIL_ALREADY_EXISTS'
+    //     );
+    //   }
+    // }
 
     // Create user in database transaction
     const newUser = await prisma.$transaction(async tx => {

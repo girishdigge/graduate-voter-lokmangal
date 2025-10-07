@@ -4,6 +4,7 @@ import {
   addUserReferences,
   getUserReferences,
   updateReferenceStatus,
+  getAllReferencesWithFilters,
 } from '../services/referenceService.js';
 import { AppError } from '../middleware/errorHandler.js';
 import logger from '../config/logger.js';
@@ -277,32 +278,13 @@ export const getAllReferences = async (req: Request, res: Response) => {
     const status = req.query.status as ReferenceStatus | undefined;
     const search = req.query.search as string | undefined;
 
-    // Build where clause
-    const where: any = {};
-
-    if (status && Object.values(ReferenceStatus).includes(status)) {
-      where.status = status;
-    }
-
-    if (search && search.trim()) {
-      where.OR = [
-        { referenceName: { contains: search.trim(), mode: 'insensitive' } },
-        { referenceContact: { contains: search.trim() } },
-        {
-          user: { fullName: { contains: search.trim(), mode: 'insensitive' } },
-        },
-      ];
-    }
-
-    // Get references with pagination
-    const skip = (page - 1) * limit;
-
-    const [references, total] = await Promise.all([
-      // This would need to be implemented in the service layer for production
-      // For now, returning a placeholder response
-      [],
-      0,
-    ]);
+    // Get references with filtering and pagination
+    const result = await getAllReferencesWithFilters(
+      page,
+      limit,
+      status,
+      search
+    );
 
     logger.info('All references retrieved via admin API', {
       adminId,
@@ -310,21 +292,13 @@ export const getAllReferences = async (req: Request, res: Response) => {
       limit,
       status,
       search: search ? 'provided' : 'none',
-      total,
+      total: result.pagination.total,
       requestId: req.headers['x-request-id'],
     });
 
     res.status(200).json({
       success: true,
-      data: {
-        references,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
-      },
+      data: result,
     });
   } catch (error) {
     if (error instanceof AppError) {

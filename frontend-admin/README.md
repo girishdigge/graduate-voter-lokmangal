@@ -39,7 +39,7 @@ This is the administrative interface for the Voter Management System.
 3. Update the API URL in `.env` if needed:
 
    ```
-   VITE_API_URL=http://localhost:3000/api
+   API_URL=http://localhost:3000/api
    ```
 
 4. Start the development server:
@@ -71,7 +71,7 @@ The admin dashboard uses JWT-based authentication with role-based access control
 
 ## Environment Variables
 
-- `VITE_API_URL`: Backend API base URL
+- `API_URL`: Backend API base URL
 - `VITE_NODE_ENV`: Environment (development/production)
 
 ## Build
