@@ -8,7 +8,6 @@ process.env.AWS_ACCESS_KEY_ID = 'test';
 process.env.AWS_SECRET_ACCESS_KEY = 'test';
 process.env.AWS_REGION = 'us-east-1';
 process.env.S3_BUCKET_NAME = 'test-bucket';
-process.env.ELASTICSEARCH_URL = 'http://localhost:9200';
 
 // Mock AWS SDK
 vi.mock('@aws-sdk/client-s3', () => ({
@@ -18,19 +17,6 @@ vi.mock('@aws-sdk/client-s3', () => ({
   PutObjectCommand: vi.fn(),
   GetObjectCommand: vi.fn(),
   DeleteObjectCommand: vi.fn(),
-}));
-
-// Mock Elasticsearch
-vi.mock('@elastic/elasticsearch', () => ({
-  Client: vi.fn(() => ({
-    index: vi.fn(),
-    search: vi.fn(),
-    delete: vi.fn(),
-    indices: {
-      exists: vi.fn(),
-      create: vi.fn(),
-    },
-  })),
 }));
 
 // Mock Prisma

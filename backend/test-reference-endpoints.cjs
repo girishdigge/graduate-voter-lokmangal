@@ -106,14 +106,14 @@ async function testReferenceEndpoints() {
 
       // Test existing search/references endpoint for comparison
       console.log('\n6. Testing GET /api/admin/search/references...');
-      const elasticSearchResponse = await axios.get(
+      const searchResponse = await axios.get(
         `${BASE_URL}/admin/search/references?q=test&page=1&limit=5`,
         { headers }
       );
-      if (elasticSearchResponse.data.success) {
-        console.log('✅ Elasticsearch references search endpoint working');
+      if (searchResponse.data.success) {
+        console.log('✅ Database-based references search endpoint working');
         console.log(
-          `Elasticsearch results: ${elasticSearchResponse.data.data.total} references found`
+          `Search results: ${searchResponse.data.data.total} references found`
         );
       }
 

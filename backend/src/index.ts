@@ -10,10 +10,6 @@ import { generalLimiter } from './config/rateLimiter.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { initializeS3 } from './config/aws.js';
-import {
-  initializeElasticsearch,
-  testElasticsearchConnection,
-} from './config/elasticsearch.js';
 
 // Import security middleware
 import {
@@ -124,7 +120,6 @@ const healthCheckHandler = async (_req: any, res: any) => {
     services: {
       database: 'checking...', // Will be implemented with Prisma
       s3: 'checking...', // Will be tested
-      elasticsearch: 'checking...', // Will be implemented
     },
   };
 
@@ -137,16 +132,6 @@ const healthCheckHandler = async (_req: any, res: any) => {
   } catch (error) {
     healthCheck.services.s3 = 'error';
     logger.error('Health check S3 test failed', { error });
-  }
-
-  try {
-    // Test Elasticsearch connection (non-blocking)
-    healthCheck.services.elasticsearch = (await testElasticsearchConnection())
-      ? 'healthy'
-      : 'unhealthy';
-  } catch (error) {
-    healthCheck.services.elasticsearch = 'error';
-    logger.error('Health check Elasticsearch test failed', { error });
   }
 
   // Return health status
@@ -317,19 +302,6 @@ const startServer = async () => {
 
     // Initialize AWS S3
     await initializeS3();
-
-    // Initialize Elasticsearch
-    try {
-      await initializeElasticsearch();
-      logger.info('Elasticsearch initialized successfully');
-    } catch (error) {
-      logger.warn(
-        'Elasticsearch initialization failed, search functionality will be limited',
-        {
-          error: error instanceof Error ? error.message : 'Unknown error',
-        }
-      );
-    }
 
     // Start listening and store server reference for graceful shutdown
     server = app.listen(PORT, () => {

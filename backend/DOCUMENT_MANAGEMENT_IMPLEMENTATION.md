@@ -15,7 +15,7 @@ This document describes the implementation of Task 6: Document Upload and Manage
    - Automatic S3 key generation with timestamp and user organization
 
 2. **File Validation**
-   - File size validation (max 5MB per file)
+   - File size validation (max 2MB per file)
    - MIME type validation (JPEG, PNG, PDF only)
    - File format verification
    - Malware scanning placeholder (ready for integration)
@@ -208,7 +208,7 @@ AWS_SECRET_ACCESS_KEY=your-secret-key
 S3_BUCKET_NAME=voter-management-documents
 
 # File Upload Configuration
-MAX_FILE_SIZE_MB=5
+MAX_FILE_SIZE_MB=2
 ALLOWED_FILE_TYPES=image/jpeg,image/png,application/pdf
 ```
 
@@ -239,9 +239,9 @@ ALLOWED_FILE_TYPES=image/jpeg,image/png,application/pdf
   "success": false,
   "error": {
     "code": "FILE_SIZE_EXCEEDED",
-    "message": "File size exceeds maximum limit of 5MB",
+    "message": "File size exceeds maximum limit of 2MB",
     "details": {
-      "maxSize": 5242880,
+      "maxSize": 2097152,
       "actualSize": 10485760
     },
     "timestamp": "2024-01-01T00:00:00Z"

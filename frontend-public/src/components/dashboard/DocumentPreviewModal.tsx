@@ -72,9 +72,9 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     input.onchange = async (e: Event) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        // Check file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          alert('File size must be less than 5MB');
+        // Check file size (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+          alert('File size must be less than 2MB');
           return;
         }
 

@@ -157,7 +157,7 @@ export const login = async (
         'Invalid login data',
         400,
         'VALIDATION_ERROR',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -276,7 +276,7 @@ export const changePassword = async (
         'Invalid password change data',
         400,
         'VALIDATION_ERROR',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -404,7 +404,7 @@ export const searchVoters = async (
         'Invalid search parameters',
         400,
         'VALIDATION_ERROR',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -500,7 +500,7 @@ export const searchReferences = async (
         'Invalid search parameters',
         400,
         'VALIDATION_ERROR',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -610,7 +610,7 @@ export const getVoters = async (
         'Invalid query parameters',
         400,
         'VALIDATION_ERROR',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -748,7 +748,7 @@ export const verifyVoter = async (
         'Invalid verification data',
         400,
         'VALIDATION_ERROR',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -814,7 +814,7 @@ export const updateVoter = async (
         'Invalid update data',
         400,
         'VALIDATION_ERROR',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -878,7 +878,7 @@ export const getReferences = async (
         'Invalid query parameters',
         400,
         'VALIDATION_ERROR',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -958,7 +958,7 @@ export const updateReferenceStatusController = async (
         'Invalid status update data',
         400,
         'VALIDATION_ERROR',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -1096,7 +1096,7 @@ export const getManagers = async (
         'Invalid query parameters',
         400,
         'VALIDATION_ERROR',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -1154,7 +1154,7 @@ export const createManagerController = async (
         'Invalid manager data',
         400,
         'VALIDATION_ERROR',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 
@@ -1218,7 +1218,7 @@ export const updateManagerController = async (
         'Invalid update data',
         400,
         'VALIDATION_ERROR',
-        validationResult.error.errors
+        validationResult.error.issues
       );
     }
 

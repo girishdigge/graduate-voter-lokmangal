@@ -37,9 +37,9 @@ const addReferencesSchema = z.object({
 
 const updateReferenceStatusSchema = z.object({
   status: z.nativeEnum(ReferenceStatus, {
-    errorMap: () => ({
-      message: 'Status must be PENDING, CONTACTED, or APPLIED',
-    }),
+    // errorMap: () => ({
+    //   message: 'Status must be PENDING, CONTACTED, or APPLIED',
+    // }),
   }),
 });
 
@@ -59,7 +59,7 @@ export const addReferences = async (req: Request, res: Response) => {
     // Validate request body
     const validationResult = addReferencesSchema.safeParse(req.body);
     if (!validationResult.success) {
-      const errors = validationResult.error.errors.map(err => ({
+      const errors = validationResult.error.issues.map((err: any) => ({
         field: err.path.join('.'),
         message: err.message,
       }));
@@ -186,7 +186,7 @@ export const updateReferenceStatusController = async (
     // Validate request body
     const validationResult = updateReferenceStatusSchema.safeParse(req.body);
     if (!validationResult.success) {
-      const errors = validationResult.error.errors.map(err => ({
+      const errors = validationResult.error.issues.map((err: any) => ({
         field: err.path.join('.'),
         message: err.message,
       }));

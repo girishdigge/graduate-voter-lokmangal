@@ -98,7 +98,7 @@ export const getConfig = () => {
 
     // File Upload
     fileUpload: {
-      maxSizeMB: parseInt(process.env.MAX_FILE_SIZE_MB || '5', 10),
+      maxSizeMB: parseInt(process.env.MAX_FILE_SIZE_MB || '2', 10),
       allowedTypes: process.env.ALLOWED_FILE_TYPES?.split(',') || [
         'image/jpeg',
         'image/png',

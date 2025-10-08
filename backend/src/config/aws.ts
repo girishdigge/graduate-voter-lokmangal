@@ -39,7 +39,8 @@ export const s3Client = new S3Client({
 export const S3_CONFIG = {
   BUCKET_NAME: S3_BUCKET_NAME || 'voter-management-documents',
   REGION: AWS_REGION,
-  MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
+  MAX_FILE_SIZE:
+    parseInt(process.env.MAX_FILE_SIZE_MB || '2', 10) * 1024 * 1024, // 2MB default
   ALLOWED_MIME_TYPES: [
     'image/jpeg',
     'image/jpg',

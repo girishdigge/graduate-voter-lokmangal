@@ -1,9 +1,8 @@
-import {
-  getElasticsearchClient,
-  getIndicesNames,
-} from '../config/elasticsearch.js';
+import { PrismaClient } from '@prisma/client';
 import logger from '../config/logger.js';
 import type { User, Reference } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export interface SearchFilters {
   verification_status?: 'verified' | 'unverified';
@@ -43,117 +42,17 @@ export interface SearchResult<T> {
   total_pages: number;
 }
 
-export interface UserSearchResult extends Omit<User, 'password'> {
-  _score?: number;
-}
+export interface UserSearchResult extends Omit<User, 'password'> {}
 
 export interface ReferenceSearchResult extends Reference {
-  _score?: number;
   user_name?: string;
   user_contact?: string;
   user_aadhar?: string;
 }
 
 class SearchService {
-  private esClient = getElasticsearchClient;
-  private indices = getIndicesNames();
-
   /**
-   * Index a user document in Elasticsearch
-   */
-  async indexUser(user: User): Promise<void> {
-    try {
-      const client = this.esClient();
-
-      // Prepare user document for indexing
-      const userDoc = {
-        id: user.id,
-        aadhar_number: user.aadharNumber,
-        full_name: user.fullName,
-        contact: user.contact,
-        email: user.email,
-        sex: user.sex,
-        is_verified: user.isVerified,
-        assembly_number: user.assemblyNumber,
-        assembly_name: user.assemblyName,
-        polling_station_number: user.pollingStationNumber,
-        city: user.city,
-        state: user.state,
-        pincode: user.pincode,
-        age: user.age,
-        qualification: user.qualification,
-        occupation: user.occupation,
-        created_at: user.createdAt,
-        updated_at: user.updatedAt,
-        verified_at: user.verifiedAt,
-        verified_by: user.verifiedBy,
-      };
-
-      await client.index({
-        index: this.indices.users,
-        id: user.id,
-        body: userDoc,
-        refresh: 'wait_for', // Ensure document is immediately searchable
-      });
-
-      logger.debug('User indexed successfully', { userId: user.id });
-    } catch (error) {
-      logger.error('Failed to index user', {
-        userId: user.id,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Index a reference document in Elasticsearch
-   */
-  async indexReference(
-    reference: Reference & {
-      user?: Pick<User, 'fullName' | 'contact' | 'aadharNumber'>;
-    }
-  ): Promise<void> {
-    try {
-      const client = this.esClient();
-
-      // Prepare reference document for indexing
-      const referenceDoc = {
-        id: reference.id,
-        user_id: reference.userId,
-        reference_name: reference.referenceName,
-        reference_contact: reference.referenceContact,
-        status: reference.status,
-        whatsapp_sent: reference.whatsappSent,
-        created_at: reference.createdAt,
-        updated_at: reference.updatedAt,
-        // Include user information for context
-        user_name: reference.user?.fullName,
-        user_contact: reference.user?.contact,
-        user_aadhar: reference.user?.aadharNumber,
-      };
-
-      await client.index({
-        index: this.indices.references,
-        id: reference.id,
-        body: referenceDoc,
-        refresh: 'wait_for',
-      });
-
-      logger.debug('Reference indexed successfully', {
-        referenceId: reference.id,
-      });
-    } catch (error) {
-      logger.error('Failed to index reference', {
-        referenceId: reference.id,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Search users with advanced filtering and pagination
+   * Search users with advanced filtering and pagination using database
    */
   async searchUsers(
     query: string = '',
@@ -161,129 +60,126 @@ class SearchService {
     options: SearchOptions = {}
   ): Promise<SearchResult<UserSearchResult>> {
     try {
-      const client = this.esClient();
       const {
         page = 1,
         limit = 20,
-        sort_by = 'created_at',
+        sort_by = 'createdAt',
         sort_order = 'desc',
       } = options;
-      const from = (page - 1) * limit;
+      const skip = (page - 1) * limit;
 
-      // Build the search query
-      const searchQuery: any = {
-        bool: {
-          must: [],
-          filter: [],
-        },
-      };
+      // Build where clause
+      const where: any = {};
 
-      // Add text search if query is provided
+      // Add text search with relaxed matching
       if (query.trim()) {
-        searchQuery.bool.must.push({
-          multi_match: {
-            query: query.trim(),
-            fields: [
-              'full_name^3',
-              'full_name.keyword^2',
-              'aadhar_number^2',
-              'contact^2',
-              'contact.keyword^2',
-              'email',
-              'assembly_name',
-              'qualification',
-              'occupation',
-            ],
-            type: 'best_fields',
-            fuzziness: 'AUTO',
-            operator: 'and',
-          },
-        });
-      } else {
-        // If no query, match all documents
-        searchQuery.bool.must.push({ match_all: {} });
+        const searchTerm = query.trim();
+        const searchWords = searchTerm
+          .split(/\s+/)
+          .filter(word => word.length > 0);
+
+        // Build OR conditions for each search word (relaxed matching)
+        const searchConditions = searchWords.flatMap(word => [
+          { fullName: { contains: word, mode: 'insensitive' as any } },
+          { contact: { contains: word } },
+          { email: { contains: word, mode: 'insensitive' as any } },
+          { aadharNumber: { contains: word } },
+          { assemblyName: { contains: word, mode: 'insensitive' as any } },
+          { qualification: { contains: word, mode: 'insensitive' as any } },
+          { occupation: { contains: word, mode: 'insensitive' as any } },
+        ]);
+
+        where.OR = searchConditions;
       }
 
       // Add filters
       if (filters.verification_status) {
-        searchQuery.bool.filter.push({
-          term: { is_verified: filters.verification_status === 'verified' },
-        });
+        where.isVerified = filters.verification_status === 'verified';
       }
 
       if (filters.sex) {
-        searchQuery.bool.filter.push({
-          term: { sex: filters.sex },
-        });
+        where.sex = filters.sex;
       }
 
       if (filters.assembly_number) {
-        searchQuery.bool.filter.push({
-          term: { assembly_number: filters.assembly_number },
-        });
+        where.assemblyNumber = filters.assembly_number;
       }
 
       if (filters.polling_station_number) {
-        searchQuery.bool.filter.push({
-          term: { polling_station_number: filters.polling_station_number },
-        });
+        where.pollingStationNumber = filters.polling_station_number;
       }
 
       if (filters.city) {
-        searchQuery.bool.filter.push({
-          term: { 'city.keyword': filters.city },
-        });
+        where.city = { contains: filters.city, mode: 'insensitive' as any };
       }
 
       if (filters.state) {
-        searchQuery.bool.filter.push({
-          term: { 'state.keyword': filters.state },
-        });
+        where.state = { contains: filters.state, mode: 'insensitive' as any };
       }
 
       // Age range filter
       if (filters.age_min || filters.age_max) {
-        const ageRange: any = {};
-        if (filters.age_min) ageRange.gte = filters.age_min;
-        if (filters.age_max) ageRange.lte = filters.age_max;
-
-        searchQuery.bool.filter.push({
-          range: { age: ageRange },
-        });
+        where.age = {};
+        if (filters.age_min) where.age.gte = filters.age_min;
+        if (filters.age_max) where.age.lte = filters.age_max;
       }
 
-      // Build sort configuration
-      const sort: any = {};
+      // Build orderBy
+      const orderBy: any = {};
       if (sort_by === 'full_name') {
-        sort['full_name.keyword'] = { order: sort_order };
+        orderBy.fullName = sort_order;
+      } else if (sort_by === 'created_at') {
+        orderBy.createdAt = sort_order;
+      } else if (sort_by === 'updated_at') {
+        orderBy.updatedAt = sort_order;
+      } else if (sort_by === 'assembly_number') {
+        orderBy.assemblyNumber = sort_order;
       } else {
-        sort[sort_by] = { order: sort_order };
+        orderBy[sort_by] = sort_order;
       }
 
       // Execute search
-      const response = await client.search({
-        index: this.indices.users,
-        body: {
-          query: searchQuery,
-          sort: [sort],
-          from,
-          size: limit,
-          _source: {
-            excludes: ['password'], // Exclude sensitive fields
-          },
-        },
-      });
+      const [data, total] = await Promise.all([
+        prisma.user.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limit,
+          select: {
+            id: true,
+            aadharNumber: true,
+            fullName: true,
+            contact: true,
+            email: true,
+            sex: true,
+            isVerified: true,
+            assemblyNumber: true,
+            assemblyName: true,
+            pollingStationNumber: true,
+            city: true,
+            state: true,
+            pincode: true,
+            age: true,
+            qualification: true,
+            occupation: true,
+            createdAt: true,
+            updatedAt: true,
+            verifiedAt: true,
+            verifiedBy: true,
+            dateOfBirth: true,
+            epicNumber: true,
+            graduationYear: true,
+            guardianSpouse: true,
+            houseNumber: true,
+            street: true,
+            area: true,
+            graduationDocType: true,
 
-      // Process results
-      const hits = response.hits.hits;
-      const total =
-        typeof response.hits.total === 'number'
-          ? response.hits.total
-          : response.hits.total?.value || 0;
-      const data = hits.map((hit: any) => ({
-        ...hit._source,
-        _score: hit._score,
-      }));
+            disabilities: true,
+          },
+        }),
+        prisma.user.count({ where }),
+      ]);
 
       return {
         data,
@@ -304,7 +200,7 @@ class SearchService {
   }
 
   /**
-   * Search references with filtering and pagination
+   * Search references with filtering and pagination using database
    */
   async searchReferences(
     query: string = '',
@@ -312,87 +208,87 @@ class SearchService {
     options: ReferenceSearchOptions = {}
   ): Promise<SearchResult<ReferenceSearchResult>> {
     try {
-      const client = this.esClient();
       const {
         page = 1,
         limit = 20,
-        sort_by = 'created_at',
+        sort_by = 'createdAt',
         sort_order = 'desc',
       } = options;
-      const from = (page - 1) * limit;
+      const skip = (page - 1) * limit;
 
-      // Build the search query
-      const searchQuery: any = {
-        bool: {
-          must: [],
-          filter: [],
-        },
-      };
+      // Build where clause
+      const where: any = {};
 
-      // Add text search if query is provided
+      // Add text search with relaxed matching
       if (query.trim()) {
-        searchQuery.bool.must.push({
-          multi_match: {
-            query: query.trim(),
-            fields: [
-              'reference_name^3',
-              'reference_name.keyword^2',
-              'reference_contact^2',
-              'reference_contact.keyword^2',
-              'user_name^2',
-              'user_contact',
-              'user_aadhar',
-            ],
-            type: 'best_fields',
-            fuzziness: 'AUTO',
-            operator: 'and',
+        const searchTerm = query.trim();
+        const searchWords = searchTerm
+          .split(/\s+/)
+          .filter(word => word.length > 0);
+
+        // Build OR conditions for each search word (relaxed matching)
+        const searchConditions = searchWords.flatMap(word => [
+          { referenceName: { contains: word, mode: 'insensitive' as any } },
+          { referenceContact: { contains: word } },
+          {
+            user: { fullName: { contains: word, mode: 'insensitive' as any } },
           },
-        });
-      } else {
-        searchQuery.bool.must.push({ match_all: {} });
+        ]);
+
+        where.OR = searchConditions;
       }
 
       // Add filters
       if (filters.status) {
-        searchQuery.bool.filter.push({
-          term: { status: filters.status },
-        });
+        where.status = filters.status;
       }
 
       if (filters.user_id) {
-        searchQuery.bool.filter.push({
-          term: { user_id: filters.user_id },
-        });
+        where.userId = filters.user_id;
       }
 
-      // Build sort configuration
-      const sort: any = {};
-      sort[sort_by] = { order: sort_order };
+      // Build orderBy
+      const orderBy: any = {};
+      if (sort_by === 'reference_name') {
+        orderBy.referenceName = sort_order;
+      } else if (sort_by === 'created_at') {
+        orderBy.createdAt = sort_order;
+      } else if (sort_by === 'updated_at') {
+        orderBy.updatedAt = sort_order;
+      } else {
+        orderBy[sort_by] = sort_order;
+      }
 
       // Execute search
-      const response = await client.search({
-        index: this.indices.references,
-        body: {
-          query: searchQuery,
-          sort: [sort],
-          from,
-          size: limit,
-        },
-      });
+      const [data, total] = await Promise.all([
+        prisma.reference.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limit,
+          include: {
+            user: {
+              select: {
+                fullName: true,
+                contact: true,
+                aadharNumber: true,
+              },
+            },
+          },
+        }),
+        prisma.reference.count({ where }),
+      ]);
 
-      // Process results
-      const hits = response.hits.hits;
-      const total =
-        typeof response.hits.total === 'number'
-          ? response.hits.total
-          : response.hits.total?.value || 0;
-      const data = hits.map((hit: any) => ({
-        ...hit._source,
-        _score: hit._score,
+      // Transform data to include user information at root level
+      const transformedData = data.map(reference => ({
+        ...reference,
+        user_name: reference.user?.fullName,
+        user_contact: reference.user?.contact,
+        user_aadhar: reference.user?.aadharNumber,
       }));
 
       return {
-        data,
+        data: transformedData,
         total,
         page,
         limit,
@@ -409,161 +305,66 @@ class SearchService {
     }
   }
 
-  /**
-   * Delete user from search index
-   */
+  // Placeholder methods for compatibility (no-op since we're not using Elasticsearch)
+  async indexUser(user: User): Promise<void> {
+    // No-op: Database-based search doesn't require indexing
+    logger.debug('User indexing skipped (using database search)', {
+      userId: user.id,
+    });
+  }
+
+  async indexReference(
+    reference: Reference & {
+      user?: Pick<User, 'fullName' | 'contact' | 'aadharNumber'>;
+    }
+  ): Promise<void> {
+    // No-op: Database-based search doesn't require indexing
+    logger.debug('Reference indexing skipped (using database search)', {
+      referenceId: reference.id,
+    });
+  }
+
   async deleteUserIndex(userId: string): Promise<void> {
-    try {
-      const client = this.esClient();
-
-      await client.delete({
-        index: this.indices.users,
-        id: userId,
-        refresh: 'wait_for',
-      });
-
-      logger.debug('User removed from search index', { userId });
-    } catch (error: any) {
-      if (error.meta?.statusCode === 404) {
-        logger.debug('User not found in search index', { userId });
-        return;
-      }
-
-      logger.error('Failed to delete user from search index', {
-        userId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
+    // No-op: Database-based search doesn't require index deletion
+    logger.debug('User index deletion skipped (using database search)', {
+      userId,
+    });
   }
 
-  /**
-   * Delete reference from search index
-   */
   async deleteReferenceIndex(referenceId: string): Promise<void> {
-    try {
-      const client = this.esClient();
-
-      await client.delete({
-        index: this.indices.references,
-        id: referenceId,
-        refresh: 'wait_for',
-      });
-
-      logger.debug('Reference removed from search index', { referenceId });
-    } catch (error: any) {
-      if (error.meta?.statusCode === 404) {
-        logger.debug('Reference not found in search index', { referenceId });
-        return;
-      }
-
-      logger.error('Failed to delete reference from search index', {
-        referenceId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
+    // No-op: Database-based search doesn't require index deletion
+    logger.debug('Reference index deletion skipped (using database search)', {
+      referenceId,
+    });
   }
 
-  /**
-   * Bulk index users (useful for initial data migration)
-   */
   async bulkIndexUsers(users: User[]): Promise<void> {
-    try {
-      const client = this.esClient();
-
-      if (users.length === 0) {
-        return;
-      }
-
-      const body = users.flatMap(user => [
-        { index: { _index: this.indices.users, _id: user.id } },
-        {
-          id: user.id,
-          aadhar_number: user.aadharNumber,
-          full_name: user.fullName,
-          contact: user.contact,
-          email: user.email,
-          sex: user.sex,
-          is_verified: user.isVerified,
-          assembly_number: user.assemblyNumber,
-          assembly_name: user.assemblyName,
-          polling_station_number: user.pollingStationNumber,
-          city: user.city,
-          state: user.state,
-          pincode: user.pincode,
-          age: user.age,
-          qualification: user.qualification,
-          occupation: user.occupation,
-          created_at: user.createdAt,
-          updated_at: user.updatedAt,
-          verified_at: user.verifiedAt,
-          verified_by: user.verifiedBy,
-        },
-      ]);
-
-      const response = await client.bulk({
-        body,
-        refresh: 'wait_for',
-      });
-
-      if (response.errors) {
-        const erroredDocuments = response.items.filter(
-          (item: any) => item.index?.error
-        );
-        logger.error('Some users failed to index', {
-          errorCount: erroredDocuments.length,
-          totalCount: users.length,
-          errors: erroredDocuments.map((item: any) => item.index.error),
-        });
-      } else {
-        logger.info('Users bulk indexed successfully', { count: users.length });
-      }
-    } catch (error) {
-      logger.error('Failed to bulk index users', {
-        userCount: users.length,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
+    // No-op: Database-based search doesn't require bulk indexing
+    logger.debug('Bulk user indexing skipped (using database search)', {
+      count: users.length,
+    });
   }
 
-  /**
-   * Get search suggestions for user names
-   */
   async getUserNameSuggestions(
     query: string,
     limit: number = 10
   ): Promise<string[]> {
     try {
-      const client = this.esClient();
-
-      const response = await client.search({
-        index: this.indices.users,
-        body: {
-          suggest: {
-            name_suggest: {
-              prefix: query,
-              completion: {
-                field: 'full_name.suggest',
-                size: limit,
-              },
-            },
+      const users = await prisma.user.findMany({
+        where: {
+          fullName: {
+            contains: query,
+            mode: 'insensitive' as any,
           },
-          _source: false,
         },
+        select: {
+          fullName: true,
+        },
+        take: limit,
+        distinct: ['fullName'],
       });
 
-      if (!response.suggest?.name_suggest?.[0]?.options) {
-        return [];
-      }
-
-      const options = response.suggest.name_suggest[0].options;
-      const suggestions = Array.isArray(options)
-        ? options.map((option: any) => option.text)
-        : [];
-
-      return suggestions;
+      return users.map(user => user.fullName);
     } catch (error) {
       logger.error('Failed to get user name suggestions', {
         query,
