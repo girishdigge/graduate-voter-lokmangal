@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { validateUserEnrollmentInput } from '../types/userValidation.js';
+import {
+  validateUserEnrollmentInput,
+  validateUserUpdateInput,
+} from '../types/userValidation.js';
 import {
   createUserEnrollment,
   getUserById,
@@ -20,7 +23,7 @@ export const validateEnrollmentInput = (
     const validation = validateUserEnrollmentInput(req.body);
 
     if (!validation.success) {
-      const errors = validation.error.errors.map(err => ({
+      const errors = validation.error.issues.map(err => ({
         field: err.path.join('.'),
         message: err.message,
       }));
@@ -29,6 +32,12 @@ export const validateEnrollmentInput = (
         errors,
         body: req.body,
         ip: req.ip,
+      });
+
+      // Log detailed validation errors for debugging
+      logger.debug('Detailed validation errors:', {
+        validationErrors: validation.error.issues,
+        receivedData: req.body,
       });
 
       return res.status(400).json({
@@ -174,41 +183,23 @@ export const updateUserProfile = async (
     }
 
     // Validate update data (partial validation)
-    const validation = validateUserEnrollmentInput({
-      ...req.body,
-      // Provide dummy values for required fields that might not be in update
-      aadharNumber: req.body.aadharNumber || '000000000000',
-      fullName: req.body.fullName || 'Dummy',
-      sex: req.body.sex || 'MALE',
-      contact: req.body.contact || '0000000000',
-      dateOfBirth: req.body.dateOfBirth || '1990-01-01',
-      houseNumber: req.body.houseNumber || 'Dummy',
-      street: req.body.street || 'Dummy',
-      area: req.body.area || 'Dummy',
-      city: req.body.city || 'PUNE',
-      state: req.body.state || 'Dummy',
-      pincode: req.body.pincode || '000000',
-    });
+    const validation = validateUserUpdateInput(req.body);
 
     if (!validation.success) {
-      const errors = validation.error.errors
-        .filter(err => Object.keys(req.body).includes(err.path[0] as string))
-        .map(err => ({
-          field: err.path.join('.'),
-          message: err.message,
-        }));
+      const errors = validation.error.issues.map(err => ({
+        field: err.path.join('.'),
+        message: err.message,
+      }));
 
-      if (errors.length > 0) {
-        return res.status(400).json({
-          success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid update data provided',
-            details: errors,
-            timestamp: new Date().toISOString(),
-          },
-        });
-      }
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid update data provided',
+          details: errors,
+          timestamp: new Date().toISOString(),
+        },
+      });
     }
 
     // Update user information
@@ -328,7 +319,7 @@ export const updateUserByIdController = async (
     });
 
     if (!validation.success) {
-      const errors = validation.error.errors
+      const errors = validation.error.issues
         .filter(err => Object.keys(req.body).includes(err.path[0] as string))
         .map(err => ({
           field: err.path.join('.'),

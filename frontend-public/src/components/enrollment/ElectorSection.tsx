@@ -4,6 +4,7 @@ import type {
   FieldErrors,
   UseFormWatch,
   UseFormSetValue,
+  UseFormClearErrors,
 } from 'react-hook-form';
 import { Input } from '../ui';
 import type { EnrollmentFormData } from '../../lib/validation';
@@ -13,6 +14,7 @@ interface ElectorSectionProps {
   errors: FieldErrors<EnrollmentFormData>;
   watch: UseFormWatch<EnrollmentFormData>;
   setValue: UseFormSetValue<EnrollmentFormData>;
+  clearErrors?: UseFormClearErrors<EnrollmentFormData>;
 }
 
 const ElectorSection: React.FC<ElectorSectionProps> = ({
@@ -20,9 +22,13 @@ const ElectorSection: React.FC<ElectorSectionProps> = ({
   errors,
   watch,
   setValue,
+  clearErrors,
 }) => {
   const isRegisteredElector = watch('elector.isRegisteredElector');
-  const selectedDisabilities = watch('elector.disabilities') || [];
+  const watchedDisabilities = watch('elector.disabilities');
+  const selectedDisabilities = Array.isArray(watchedDisabilities)
+    ? watchedDisabilities.filter(d => typeof d === 'string' && d.trim() !== '')
+    : [];
 
   const disabilityOptions = [
     { value: 'VISUAL_IMPAIRMENT', label: 'Visual Impairment' },
@@ -35,14 +41,46 @@ const ElectorSection: React.FC<ElectorSectionProps> = ({
   ];
 
   const handleDisabilityChange = (value: string, checked: boolean) => {
-    const currentDisabilities = selectedDisabilities || [];
+    // Ensure we always work with a clean array
+    const currentDisabilities = Array.isArray(selectedDisabilities)
+      ? selectedDisabilities.filter(
+          d => typeof d === 'string' && d.trim() !== ''
+        )
+      : [];
+
     if (checked) {
-      setValue('elector.disabilities', [...currentDisabilities, value]);
+      // Only add if not already present
+      if (!currentDisabilities.includes(value)) {
+        setValue('elector.disabilities', [...currentDisabilities, value]);
+      }
     } else {
       setValue(
         'elector.disabilities',
         currentDisabilities.filter(d => d !== value)
       );
+    }
+  };
+
+  const handleElectorToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setValue('elector.isRegisteredElector', checked);
+
+    // Clear elector field errors when toggling
+    if (clearErrors) {
+      clearErrors([
+        'elector.assemblyNumber',
+        'elector.assemblyName',
+        'elector.pollingStationNumber',
+        'elector.epicNumber',
+      ]);
+    }
+
+    // Clear the fields when unchecking
+    if (!checked) {
+      setValue('elector.assemblyNumber', '');
+      setValue('elector.assemblyName', '');
+      setValue('elector.pollingStationNumber', '');
+      setValue('elector.epicNumber', '');
     }
   };
 
@@ -66,6 +104,7 @@ const ElectorSection: React.FC<ElectorSectionProps> = ({
             id="isRegisteredElector"
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             {...register('elector.isRegisteredElector')}
+            onChange={handleElectorToggle}
           />
           <label
             htmlFor="isRegisteredElector"
@@ -146,13 +185,6 @@ const ElectorSection: React.FC<ElectorSectionProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Error message for conditional validation */}
-        {errors.elector?.isRegisteredElector && (
-          <p className="text-sm text-red-600">
-            {errors.elector.isRegisteredElector.message}
-          </p>
-        )}
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import axios, { type AxiosError, type AxiosResponse } from 'axios';
 
 // Create axios instance with base configuration
 export const api = axios.create({
-  baseURL: import.meta.env.API_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
   timeout: 30000, // 30 seconds timeout
   headers: {
     'Content-Type': 'application/json',
@@ -67,9 +67,12 @@ export const apiEndpoints = {
     api.post('/users/enroll', userData),
 
   // User profile
-  getUserProfile: (userId: string) => api.get(`/users/${userId}`),
+  getUserProfile: () => api.get('/users/profile'),
+  getUserById: (userId: string) => api.get(`/users/${userId}`),
 
-  updateUserProfile: (userId: string, userData: Record<string, unknown>) =>
+  updateUserProfile: (userData: Record<string, unknown>) =>
+    api.put('/users/profile', userData),
+  updateUserById: (userId: string, userData: Record<string, unknown>) =>
     api.put(`/users/${userId}`, userData),
 
   // Document management
@@ -83,6 +86,8 @@ export const apiEndpoints = {
       params: { documentType },
     });
   },
+
+  getAllUserDocuments: (userId: string) => api.get(`/documents/${userId}`),
 
   getDocument: (userId: string, documentType: string) =>
     api.get(`/documents/${userId}/${documentType}`),

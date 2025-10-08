@@ -67,14 +67,46 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ className }) => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await apiEndpoints.getUserProfile(user.id);
-      setUserData(response.data.user);
+
+      console.log('Loading user data for user:', user);
+      console.log(
+        'Token from localStorage:',
+        localStorage.getItem('userToken')
+      );
+
+      const response = await apiEndpoints.getUserProfile();
+      console.log('API response:', response);
+      console.log('Response data:', response.data);
+
+      setUserData(response.data.data.user);
     } catch (error: any) {
       console.error('Failed to load user data:', error);
-      setError(
-        error.response?.data?.error?.message ||
-          'Failed to load profile data. Please try again.'
-      );
+      console.error('Error response:', error.response);
+      console.error('Error response data:', error.response?.data);
+
+      let errorMessage = 'Failed to load profile data. Please try again.';
+
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const serverError = error.response.data?.error?.message;
+
+        if (status === 401) {
+          errorMessage = 'Authentication failed. Please login again.';
+        } else if (status === 404) {
+          errorMessage = 'Profile not found. Please contact support.';
+        } else if (status === 500) {
+          errorMessage = 'Server error. Please try again later.';
+        } else if (serverError) {
+          errorMessage = serverError;
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage =
+          'Cannot connect to server. Please check your internet connection.';
+      }
+
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -102,11 +134,27 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ className }) => {
       setError(null);
       setSuccessMessage(null);
 
-      const response = await apiEndpoints.updateUserProfile(
-        user.id,
-        updatedData
-      );
-      const updatedUserData = response.data.user;
+      // Transform disabilities from JSON string to array for backend API
+      const transformedData: any = { ...updatedData };
+      if (transformedData.disabilities !== undefined) {
+        try {
+          // If disabilities is a JSON string, parse it to array
+          const disabilitiesArray = transformedData.disabilities
+            ? JSON.parse(transformedData.disabilities)
+            : [];
+          transformedData.disabilities = Array.isArray(disabilitiesArray)
+            ? disabilitiesArray
+            : [];
+        } catch {
+          // If parsing fails, set to empty array
+          transformedData.disabilities = [];
+        }
+      }
+
+      console.log('Sending update data:', transformedData);
+
+      const response = await apiEndpoints.updateUserProfile(transformedData);
+      const updatedUserData = response.data.data.user;
 
       setUserData(updatedUserData);
       setIsEditing(false);
@@ -227,7 +275,13 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ className }) => {
         {/* Status Messages */}
         {error && (
           <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-red-800">{error}</p>
+            <p className="text-red-800 mb-3">{error}</p>
+            <button
+              onClick={loadUserData}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              Retry
+            </button>
           </div>
         )}
 

@@ -14,6 +14,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (aadharNumber: string) => Promise<{ exists: boolean; user?: User }>;
+  loginWithUserData: (user: User, token: string) => void;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
 }

@@ -28,6 +28,7 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({
     watch,
     trigger,
     setValue,
+    clearErrors,
     formState: { errors, isValid },
   } = useForm<EnrollmentFormData>({
     resolver: zodResolver(enrollmentFormSchema),
@@ -42,6 +43,7 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({
       ...initialData,
     },
     mode: 'onChange',
+    reValidateMode: 'onChange',
   });
 
   const watchDateOfBirth = watch('personalInfo.dateOfBirth');
@@ -87,6 +89,7 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({
           errors={errors}
           watch={watch}
           setValue={setValue}
+          clearErrors={clearErrors}
         />
       ),
       fields: [

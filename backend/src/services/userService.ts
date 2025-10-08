@@ -342,10 +342,63 @@ export const updateUserInformation = async (
       throw new AppError('User not found', 404, 'USER_NOT_FOUND');
     }
 
-    // Transform update data
-    const transformedData = transformEnrollmentData(
-      updateData as UserEnrollmentData
-    );
+    // Transform update data (handle partial updates)
+    const transformedData: any = {};
+
+    // Only transform fields that are present in the update data
+    if (updateData.fullName !== undefined)
+      transformedData.fullName = updateData.fullName.trim();
+    if (updateData.sex !== undefined) transformedData.sex = updateData.sex;
+    if (updateData.guardianSpouse !== undefined)
+      transformedData.guardianSpouse =
+        updateData.guardianSpouse?.trim() || null;
+    if (updateData.qualification !== undefined)
+      transformedData.qualification = updateData.qualification?.trim() || null;
+    if (updateData.occupation !== undefined)
+      transformedData.occupation = updateData.occupation?.trim() || null;
+    if (updateData.contact !== undefined)
+      transformedData.contact = updateData.contact;
+    if (updateData.email !== undefined)
+      transformedData.email = updateData.email?.trim() || null;
+    if (updateData.dateOfBirth !== undefined) {
+      transformedData.dateOfBirth = updateData.dateOfBirth;
+      transformedData.age = calculateAge(updateData.dateOfBirth);
+    }
+    if (updateData.houseNumber !== undefined)
+      transformedData.houseNumber = updateData.houseNumber.trim();
+    if (updateData.street !== undefined)
+      transformedData.street = updateData.street.trim();
+    if (updateData.area !== undefined)
+      transformedData.area = updateData.area.trim();
+    if (updateData.city !== undefined)
+      transformedData.city = updateData.city.trim();
+    if (updateData.state !== undefined)
+      transformedData.state = updateData.state.trim();
+    if (updateData.pincode !== undefined)
+      transformedData.pincode = updateData.pincode;
+    if (updateData.isRegisteredElector !== undefined)
+      transformedData.isRegisteredElector = updateData.isRegisteredElector;
+    if (updateData.assemblyNumber !== undefined)
+      transformedData.assemblyNumber =
+        updateData.assemblyNumber?.trim() || null;
+    if (updateData.assemblyName !== undefined)
+      transformedData.assemblyName = updateData.assemblyName?.trim() || null;
+    if (updateData.pollingStationNumber !== undefined)
+      transformedData.pollingStationNumber =
+        updateData.pollingStationNumber?.trim() || null;
+    if (updateData.epicNumber !== undefined)
+      transformedData.epicNumber = updateData.epicNumber?.trim() || null;
+    if (updateData.disabilities !== undefined)
+      transformedData.disabilities = Array.isArray(updateData.disabilities)
+        ? JSON.stringify(updateData.disabilities)
+        : updateData.disabilities;
+    if (updateData.university !== undefined)
+      transformedData.university = updateData.university?.trim() || null;
+    if (updateData.graduationYear !== undefined)
+      transformedData.graduationYear = updateData.graduationYear || null;
+    if (updateData.graduationDocType !== undefined)
+      transformedData.graduationDocType =
+        updateData.graduationDocType?.trim() || null;
 
     // Remove fields that shouldn't be updated
     const { aadharNumber, ...updateFields } = transformedData;
@@ -384,11 +437,6 @@ export const updateUserInformation = async (
           'EMAIL_ALREADY_EXISTS'
         );
       }
-    }
-
-    // Recalculate age if date of birth is being updated
-    if (updateFields.dateOfBirth) {
-      updateFields.age = calculateAge(updateFields.dateOfBirth);
     }
 
     // Update user in database

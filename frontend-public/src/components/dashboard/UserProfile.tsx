@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { User, MapPin, GraduationCap, Vote } from 'lucide-react';
@@ -44,6 +44,94 @@ interface UserProfileProps {
   disabled?: boolean;
   className?: string;
 }
+
+interface DisabilitiesSectionProps {
+  selectedDisabilities?: string;
+  onChange: (disabilities: string) => void;
+  disabled?: boolean;
+}
+
+const DisabilitiesSection: React.FC<DisabilitiesSectionProps> = ({
+  selectedDisabilities,
+  onChange,
+  disabled = false,
+}) => {
+  const [currentDisabilities, setCurrentDisabilities] = useState<string[]>([]);
+
+  const disabilityOptions = [
+    { value: 'VISUAL_IMPAIRMENT', label: 'Visual Impairment' },
+    {
+      value: 'SPEECH_AND_HEARING_DISABILITY',
+      label: 'Speech and Hearing Disability',
+    },
+    { value: 'LOCOMOTOR_DISABILITY', label: 'Locomotor Disability' },
+    { value: 'OTHER', label: 'Other' },
+  ];
+
+  // Parse existing disabilities when component mounts or selectedDisabilities changes
+  useEffect(() => {
+    if (selectedDisabilities) {
+      try {
+        const parsed = JSON.parse(selectedDisabilities);
+        setCurrentDisabilities(Array.isArray(parsed) ? parsed : []);
+      } catch {
+        // If it's not valid JSON, treat as empty array
+        setCurrentDisabilities([]);
+      }
+    } else {
+      setCurrentDisabilities([]);
+    }
+  }, [selectedDisabilities]);
+
+  const handleDisabilityChange = (value: string, checked: boolean) => {
+    let newDisabilities: string[];
+
+    if (checked) {
+      // Add disability if not already present
+      newDisabilities = currentDisabilities.includes(value)
+        ? currentDisabilities
+        : [...currentDisabilities, value];
+    } else {
+      // Remove disability
+      newDisabilities = currentDisabilities.filter(d => d !== value);
+    }
+
+    setCurrentDisabilities(newDisabilities);
+
+    // Store as JSON string in component state (consistent with UserData interface)
+    onChange(JSON.stringify(newDisabilities));
+  };
+
+  return (
+    <div className="md:col-span-2">
+      <label className="block text-sm font-medium text-gray-700 mb-3">
+        Disability, If Any
+      </label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {disabilityOptions.map(option => (
+          <div key={option.value} className="flex items-center space-x-3">
+            <input
+              type="checkbox"
+              id={`edit-disability-${option.value}`}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              checked={currentDisabilities.includes(option.value)}
+              onChange={e =>
+                handleDisabilityChange(option.value, e.target.checked)
+              }
+              disabled={disabled}
+            />
+            <label
+              htmlFor={`edit-disability-${option.value}`}
+              className="text-sm text-gray-700"
+            >
+              {option.label}
+            </label>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export const UserProfile: React.FC<UserProfileProps> = ({
   userData,
@@ -493,39 +581,49 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             )}
 
             {/* Disabilities */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Disability, If Any
-              </label>
-              <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                {userData.disabilities
-                  ? (() => {
-                      try {
-                        const disabilityList = JSON.parse(
-                          userData.disabilities
-                        );
-                        const disabilityLabels = {
-                          VISUAL_IMPAIRMENT: 'Visual Impairment',
-                          SPEECH_AND_HEARING_DISABILITY:
-                            'Speech and Hearing Disability',
-                          LOCOMOTOR_DISABILITY: 'Locomotor Disability',
-                          OTHER: 'Other',
-                        };
-                        return disabilityList
-                          .map(
-                            (d: string) =>
-                              disabilityLabels[
-                                d as keyof typeof disabilityLabels
-                              ] || d
-                          )
-                          .join(', ');
-                      } catch {
-                        return userData.disabilities;
-                      }
-                    })()
-                  : 'None'}
+            {isEditing ? (
+              <DisabilitiesSection
+                selectedDisabilities={userData.disabilities}
+                onChange={disabilities =>
+                  handleInputChange('disabilities', disabilities)
+                }
+                disabled={disabled}
+              />
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Disability, If Any
+                </label>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                  {userData.disabilities
+                    ? (() => {
+                        try {
+                          const disabilityList = JSON.parse(
+                            userData.disabilities
+                          );
+                          const disabilityLabels = {
+                            VISUAL_IMPAIRMENT: 'Visual Impairment',
+                            SPEECH_AND_HEARING_DISABILITY:
+                              'Speech and Hearing Disability',
+                            LOCOMOTOR_DISABILITY: 'Locomotor Disability',
+                            OTHER: 'Other',
+                          };
+                          return disabilityList
+                            .map(
+                              (d: string) =>
+                                disabilityLabels[
+                                  d as keyof typeof disabilityLabels
+                                ] || d
+                            )
+                            .join(', ');
+                        } catch {
+                          return userData.disabilities;
+                        }
+                      })()
+                    : 'None'}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* EPIC Number */}
             {isEditing ? (

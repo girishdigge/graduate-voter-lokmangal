@@ -3,7 +3,7 @@ import logger from './logger.js';
 
 // General API rate limiter
 export const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 60 * 1000, // 1 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   message: {
     success: false,
@@ -32,8 +32,8 @@ export const generalLimiter = rateLimit({
 
 // Strict rate limiter for sensitive endpoints (like Aadhar check)
 export const strictLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per windowMs
+  windowMs: 60 * 1000, // 1 minutes
+  max: 100, // Limit each IP to 10 requests per windowMs
   message: {
     success: false,
     error: {
@@ -61,8 +61,8 @@ export const strictLimiter = rateLimit({
 
 // Auth rate limiter for login attempts
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 login attempts per windowMs
+  windowMs: 60 * 1000, // 1 minutes
+  max: 10, // Limit each IP to 10 login attempts per windowMs
   message: {
     success: false,
     error: {
@@ -92,8 +92,8 @@ export const authLimiter = rateLimit({
 
 // Aadhar check rate limiter - specific for Aadhar validation endpoint
 export const aadharCheckLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 8, // Limit each IP to 8 Aadhar checks per windowMs (slightly more restrictive than strict limiter)
+  windowMs: 60 * 1000, // 1 minutes
+  max: 100, // Limit each IP to 8 Aadhar checks per windowMs (slightly more restrictive than strict limiter)
   message: {
     success: false,
     error: {
@@ -124,8 +124,8 @@ export const aadharCheckLimiter = rateLimit({
 
 // Document upload rate limiter - specific for file upload endpoints
 export const documentUploadLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // Limit each IP to 20 document uploads per windowMs
+  windowMs: 60 * 1000, // 1 minutes
+  max: 100, // Limit each IP to 100 document uploads per windowMs
   message: {
     success: false,
     error: {

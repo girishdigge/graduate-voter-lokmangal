@@ -70,6 +70,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('userData');
   };
 
+  const loginWithUserData = (userData: User, token: string) => {
+    setUser(userData);
+    localStorage.setItem('userToken', token);
+    localStorage.setItem('userData', JSON.stringify(userData));
+  };
+
   const updateUser = (userData: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...userData };
@@ -83,6 +89,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     isAuthenticated,
     login,
+    loginWithUserData,
     logout,
     updateUser,
   };

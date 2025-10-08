@@ -184,10 +184,7 @@ export const userEnrollmentSchema = z
       .or(z.literal('')),
     pollingStationNumber: pollingStationSchema,
     epicNumber: epicNumberSchema,
-    disabilities: z
-      .array(z.string())
-      .optional()
-      .transform(val => (val ? JSON.stringify(val) : null)),
+    disabilities: z.array(z.string()).optional(),
 
     // Education Information
     university: z
@@ -264,6 +261,13 @@ export const validateUserEnrollmentInput = (data: unknown) => {
   return userEnrollmentSchema.safeParse(data);
 };
 
+// Schema for user profile update validation (all fields optional)
+const userUpdateSchema = userEnrollmentSchema.partial();
+
+export const validateUserUpdateInput = (data: unknown) => {
+  return userUpdateSchema.safeParse(data);
+};
+
 // Helper function to transform enrollment data for database
 export const transformEnrollmentData = (data: UserEnrollmentData) => {
   const age = calculateAge(data.dateOfBirth);
@@ -290,7 +294,10 @@ export const transformEnrollmentData = (data: UserEnrollmentData) => {
     assemblyName: data.assemblyName?.trim() || null,
     pollingStationNumber: data.pollingStationNumber?.trim() || null,
     epicNumber: data.epicNumber?.trim() || null,
-    disabilities: data.disabilities || null,
+    disabilities:
+      Array.isArray(data.disabilities) && data.disabilities.length > 0
+        ? JSON.stringify(data.disabilities)
+        : null,
     university: data.university?.trim() || null,
     graduationYear: data.graduationYear || null,
     graduationDocType: data.graduationDocType?.trim() || null,
