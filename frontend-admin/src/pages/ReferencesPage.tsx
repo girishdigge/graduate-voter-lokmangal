@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { type SortingState } from '@tanstack/react-table';
-import { MessageSquare, Download } from 'lucide-react';
+import { MessageSquare, Download, UserPlus } from 'lucide-react';
 import { ReferenceSearchBar } from '../components/references/ReferenceSearchBar';
 import { ReferenceFilterPanel } from '../components/references/ReferenceFilterPanel';
 import { ReferencesTable } from '../components/references/ReferencesTable';
+import { AddReferenceModal } from '../components/references/AddReferenceModal';
 import { Pagination, Button, LoadingSpinner } from '../components/ui';
 import { referenceApi } from '../lib/referenceApi';
 import type {
@@ -22,6 +23,9 @@ export const ReferencesPage: React.FC = () => {
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'createdAt', desc: true },
   ]);
+  const [isAddReferenceModalOpen, setIsAddReferenceModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [selectedUserName, setSelectedUserName] = useState<string>('');
 
   const itemsPerPage = 20;
 

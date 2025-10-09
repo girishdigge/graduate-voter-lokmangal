@@ -16,6 +16,15 @@ export const referenceApi = {
     return response.data;
   },
 
+  // Add references for a user
+  addReferences: async (
+    userId: string,
+    references: { referenceName: string; referenceContact: string }[]
+  ): Promise<{ data: { references: Reference[]; message: string } }> => {
+    const response = await api.post(`/references/${userId}`, { references });
+    return response.data;
+  },
+
   // Search references using Elasticsearch
   searchReferences: async (
     query: string,

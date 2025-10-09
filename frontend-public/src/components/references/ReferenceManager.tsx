@@ -52,17 +52,20 @@ export const ReferenceManager: React.FC<ReferenceManagerProps> = ({
     }
   };
 
-  const handleContactsSelected = async (contacts: Contact[]) => {
+  const handleContactsSelected = async (contacts: Contact | Contact[]) => {
     if (!currentUserId) return;
 
     try {
       setIsSubmitting(true);
       setError(null);
 
+      // Normalize to array
+      const contactArray = Array.isArray(contacts) ? contacts : [contacts];
+
       // Convert contacts to the format expected by the API
-      const referencesData = contacts.map(contact => ({
-        name: contact.name,
-        contact: contact.tel,
+      const referencesData = contactArray.map(contact => ({
+        referenceName: contact.name,
+        referenceContact: contact.tel,
       }));
 
       const response = await apiEndpoints.addReferences(

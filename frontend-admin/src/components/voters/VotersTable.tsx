@@ -7,7 +7,15 @@ import {
   createColumnHelper,
   type SortingState,
 } from '@tanstack/react-table';
-import { ChevronUp, ChevronDown, Eye, Edit, Phone, Mail } from 'lucide-react';
+import {
+  ChevronUp,
+  ChevronDown,
+  Eye,
+  Edit,
+  Phone,
+  Mail,
+  UserPlus,
+} from 'lucide-react';
 import { Badge, Button } from '../ui';
 import { VerifyButton } from './VerifyButton';
 import type { Voter } from '../../types/voter';
@@ -20,6 +28,7 @@ interface VotersTableProps {
   onViewDetails: (voter: Voter) => void;
   onEditVoter: (voter: Voter) => void;
   onVerifyVoter: (userId: string, isVerified: boolean) => Promise<void>;
+  onAddReferences: (voter: Voter) => void;
 }
 
 const columnHelper = createColumnHelper<Voter>();
@@ -32,6 +41,7 @@ export const VotersTable: React.FC<VotersTableProps> = ({
   onViewDetails,
   onEditVoter,
   onVerifyVoter,
+  onAddReferences,
 }) => {
   const columns = useMemo(
     () => [
@@ -123,12 +133,13 @@ export const VotersTable: React.FC<VotersTableProps> = ({
         id: 'actions',
         header: 'Actions',
         cell: info => (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button
               size="sm"
               variant="ghost"
               onClick={() => onViewDetails(info.row.original)}
               className="p-1"
+              title="View Details"
             >
               <Eye className="h-4 w-4" />
             </Button>
@@ -137,8 +148,18 @@ export const VotersTable: React.FC<VotersTableProps> = ({
               variant="ghost"
               onClick={() => onEditVoter(info.row.original)}
               className="p-1"
+              title="Edit Voter"
             >
               <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onAddReferences(info.row.original)}
+              className="p-1 text-blue-600 hover:text-blue-700"
+              title="Add References"
+            >
+              <UserPlus className="h-4 w-4" />
             </Button>
             <VerifyButton
               isVerified={info.row.original.isVerified}
@@ -151,7 +172,7 @@ export const VotersTable: React.FC<VotersTableProps> = ({
         ),
       }),
     ],
-    [onViewDetails, onEditVoter, onVerifyVoter]
+    [onViewDetails, onEditVoter, onVerifyVoter, onAddReferences]
   );
 
   const table = useReactTable({

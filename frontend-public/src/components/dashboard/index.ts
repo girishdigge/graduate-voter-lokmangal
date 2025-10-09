@@ -7,5 +7,4 @@ export { ProfileCard } from './ProfileCard';
 export { ProfileModal } from './ProfileModal';
 export { DocumentsCard } from './DocumentsCard';
 export { DocumentPreviewModal } from './DocumentPreviewModal';
-export { ReferencesCard } from './ReferencesCard';
-export { AddReferenceModal } from './AddReferenceModal';
+export { ContactPickerCard } from './ContactPickerCard';

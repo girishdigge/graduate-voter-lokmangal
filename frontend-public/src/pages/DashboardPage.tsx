@@ -6,7 +6,7 @@ import {
   StatusCard,
   ProfileCard,
   DocumentsCard,
-  ReferencesCard,
+  ContactPickerCard,
 } from '../components/dashboard';
 import { apiEndpoints } from '../lib/api';
 import { LogOut, CheckCircle, Clock, AlertCircle } from 'lucide-react';
@@ -186,7 +186,7 @@ const DashboardPage: React.FC = () => {
             {/* Right Column - Documents & References */}
             <div className="lg:col-span-2 space-y-6">
               <DocumentsCard userId={userData.id} />
-              <ReferencesCard userId={userData.id} />
+              <ContactPickerCard userId={userData.id} />
             </div>
           </div>
         </div>

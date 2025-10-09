@@ -7,6 +7,7 @@ import { FilterPanel } from '../components/voters/FilterPanel';
 import { VotersTable } from '../components/voters/VotersTable';
 import { VoterDetailModal } from '../components/voters/VoterDetailModal';
 import { VoterEditModal } from '../components/voters/VoterEditModal';
+import { AddReferenceModal } from '../components/references/AddReferenceModal';
 import { Pagination, Button, LoadingSpinner } from '../components/ui';
 import { voterApi } from '../lib/voterApi';
 import type {
@@ -30,6 +31,8 @@ export const VotersPage: React.FC = () => {
   const [editingVoter, setEditingVoter] = useState<Voter | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddReferenceModal, setShowAddReferenceModal] = useState(false);
+  const [referenceVoter, setReferenceVoter] = useState<Voter | null>(null);
 
   const itemsPerPage = 20;
 
@@ -145,6 +148,11 @@ export const VotersPage: React.FC = () => {
     [updateMutation]
   );
 
+  const handleAddReferences = useCallback((voter: Voter) => {
+    setReferenceVoter(voter);
+    setShowAddReferenceModal(true);
+  }, []);
+
   const handleCloseDetailModal = useCallback(() => {
     setShowDetailModal(false);
     setSelectedVoter(null);
@@ -244,6 +252,7 @@ export const VotersPage: React.FC = () => {
             onViewDetails={handleViewDetails}
             onEditVoter={handleEditVoter}
             onVerifyVoter={handleVerifyVoter}
+            onAddReferences={handleAddReferences}
           />
 
           {/* Pagination */}
@@ -280,6 +289,19 @@ export const VotersPage: React.FC = () => {
         onSave={handleUpdateVoter}
         isLoading={updateMutation.isPending}
       />
+
+      {/* Add Reference Modal */}
+      {referenceVoter && (
+        <AddReferenceModal
+          isOpen={showAddReferenceModal}
+          onClose={() => {
+            setShowAddReferenceModal(false);
+            setReferenceVoter(null);
+          }}
+          userId={referenceVoter.id}
+          userName={referenceVoter.fullName}
+        />
+      )}
     </div>
   );
 };
