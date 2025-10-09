@@ -1,7 +1,7 @@
-import { PrismaClient, ReferenceStatus } from '@prisma/client';
+import { PrismaClient, ReferenceStatus, Prisma } from '@prisma/client';
 import { AppError } from '../middleware/errorHandler.js';
 import logger from '../config/logger.js';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { logReferenceCreation, logReferenceUpdate } from './auditService.js';
 import searchService from './searchService.js';
 
@@ -21,7 +21,7 @@ interface WhatsAppMessage {
     language: {
       code: string;
     };
-    components: Array<{
+    components?: Array<{
       type: string;
       parameters: Array<{
         type: string;
@@ -66,6 +66,62 @@ export const formatContactForWhatsApp = (contact: string): string => {
 };
 
 /**
+ * Send simple WhatsApp text message (fallback)
+ */
+const sendSimpleWhatsAppMessage = async (
+  to: string,
+  message: string,
+  apiUrl: string,
+  accessToken: string,
+  phoneNumberId: string
+): Promise<boolean> => {
+  try {
+    const messagePayload = {
+      messaging_product: 'whatsapp',
+      to: to,
+      type: 'text',
+      text: {
+        body: message,
+      },
+    };
+
+    const response = await fetch(`${apiUrl}/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(messagePayload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      logger.error('WhatsApp simple message failed', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData,
+        to: to.substring(0, 4) + '****' + to.substring(8),
+      });
+      return false;
+    }
+
+    const responseData = (await response.json()) as any;
+    logger.info('WhatsApp simple message sent successfully', {
+      messageId: responseData.messages?.[0]?.id,
+      to: to.substring(0, 4) + '****' + to.substring(8),
+    });
+
+    return true;
+  } catch (error) {
+    logger.error('Error sending simple WhatsApp message', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      to: to.substring(0, 4) + '****' + to.substring(8),
+    });
+    return false;
+  }
+};
+
+/**
  * Send WhatsApp notification to reference
  */
 export const sendWhatsAppNotification = async (
@@ -92,35 +148,16 @@ export const sendWhatsAppNotification = async (
 
     const formattedContact = formatContactForWhatsApp(referenceContact);
 
-    // Create WhatsApp message payload
+    // Create WhatsApp message payload - using hello_world template for testing
     const messagePayload: WhatsAppMessage = {
       messaging_product: 'whatsapp',
       to: formattedContact,
       type: 'template',
       template: {
-        name: 'voter_reference_notification', // This template needs to be created in WhatsApp Business
+        name: 'hello_world', // Using standard template that works
         language: {
           code: 'en_US',
         },
-        components: [
-          {
-            type: 'body',
-            parameters: [
-              {
-                type: 'text',
-                text: referenceName,
-              },
-              {
-                type: 'text',
-                text: voterName,
-              },
-              {
-                type: 'text',
-                text: voterContact,
-              },
-            ],
-          },
-        ],
       },
     };
 
@@ -139,15 +176,63 @@ export const sendWhatsAppNotification = async (
 
     if (!response.ok) {
       const errorData = await response.text();
-      logger.error('WhatsApp API error', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData,
-        referenceContact:
-          referenceContact.substring(0, 4) +
-          '****' +
-          referenceContact.substring(8),
-      });
+      let errorDetails;
+
+      try {
+        errorDetails = JSON.parse(errorData);
+      } catch (e) {
+        errorDetails = { error: { message: errorData } };
+      }
+
+      // Log specific error types for better debugging
+      if (errorDetails.error?.code === 190) {
+        logger.error('WhatsApp access token expired or invalid', {
+          error: errorDetails.error.message,
+          code: errorDetails.error.code,
+          referenceContact:
+            referenceContact.substring(0, 4) +
+            '****' +
+            referenceContact.substring(8),
+        });
+      } else if (errorDetails.error?.code === 2500) {
+        logger.error('WhatsApp API URL or phone number ID issue', {
+          error: errorDetails.error.message,
+          code: errorDetails.error.code,
+          phoneNumberId: phoneNumberId,
+        });
+      } else {
+        logger.error('WhatsApp API error', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+          referenceContact:
+            referenceContact.substring(0, 4) +
+            '****' +
+            referenceContact.substring(8),
+        });
+      }
+
+      // Try fallback to simple text message if template fails
+      if (
+        errorDetails.error?.code === 132 ||
+        errorDetails.error?.message?.includes('template')
+      ) {
+        logger.info('Template message failed, trying simple text message', {
+          referenceContact:
+            referenceContact.substring(0, 4) +
+            '****' +
+            referenceContact.substring(8),
+        });
+
+        return await sendSimpleWhatsAppMessage(
+          formattedContact,
+          `Hello ${referenceName}, You have been added as a reference by ${voterName} (Contact: ${voterContact}) for voter registration. Please verify this information and respond if you have any concerns. Thank you.`,
+          whatsappApiUrl,
+          accessToken,
+          phoneNumberId
+        );
+      }
+
       return false;
     }
 
@@ -204,7 +289,7 @@ export const addUserReferences = async (
     const errors: string[] = [];
 
     for (let i = 0; i < references.length; i++) {
-      const ref = references[i];
+      const ref: ReferenceData = references[i];
 
       if (!ref.referenceName || ref.referenceName.trim().length === 0) {
         errors.push(`Reference ${i + 1}: Name is required`);
@@ -271,14 +356,16 @@ export const addUserReferences = async (
       where: {
         userId,
         referenceContact: {
-          in: validatedReferences.map(ref => ref.referenceContact),
+          in: validatedReferences.map(
+            (ref: ReferenceData) => ref.referenceContact
+          ),
         },
       },
     });
 
     if (existingReferences.length > 0) {
       const duplicateContacts = existingReferences.map(
-        ref =>
+        (ref: any) =>
           ref.referenceContact.substring(0, 4) +
           '****' +
           ref.referenceContact.substring(8)
@@ -291,63 +378,67 @@ export const addUserReferences = async (
     }
 
     // Create references in database transaction
-    const createdReferences = await prisma.$transaction(async tx => {
-      const references = [];
+    const createdReferences = await prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        const references = [];
 
-      for (const refData of validatedReferences) {
-        const reference = await tx.reference.create({
-          data: {
-            userId,
-            referenceName: refData.referenceName,
-            referenceContact: refData.referenceContact,
-            status: ReferenceStatus.PENDING,
-            whatsappSent: false,
-          },
-          select: {
-            id: true,
-            referenceName: true,
-            referenceContact: true,
-            status: true,
-            whatsappSent: true,
-            whatsappSentAt: true,
-            createdAt: true,
-          },
-        });
+        for (const refData of validatedReferences) {
+          const reference = await tx.reference.create({
+            data: {
+              userId,
+              referenceName: refData.referenceName,
+              referenceContact: refData.referenceContact,
+              status: ReferenceStatus.PENDING,
+              whatsappSent: false,
+            },
+            select: {
+              id: true,
+              referenceName: true,
+              referenceContact: true,
+              status: true,
+              whatsappSent: true,
+              whatsappSentAt: true,
+              createdAt: true,
+            },
+          });
 
-        references.push(reference);
+          references.push(reference);
+        }
+
+        return references;
       }
-
-      return references;
-    });
+    );
 
     // Send WhatsApp notifications asynchronously
-    const notificationPromises = createdReferences.map(async reference => {
-      try {
-        const whatsappSent = await sendWhatsAppNotification(
-          reference.referenceContact,
-          reference.referenceName,
-          user.fullName,
-          user.contact
-        );
+    const notificationPromises = createdReferences.map(
+      async (reference: any) => {
+        try {
+          const whatsappSent = await sendWhatsAppNotification(
+            reference.referenceContact,
+            reference.referenceName,
+            user.fullName,
+            user.contact
+          );
 
-        // Update WhatsApp sent status
-        await prisma.reference.update({
-          where: { id: reference.id },
-          data: {
-            whatsappSent,
-            whatsappSentAt: whatsappSent ? new Date() : null,
-          },
-        });
+          // Update WhatsApp sent status
+          await prisma.reference.update({
+            where: { id: reference.id },
+            data: {
+              whatsappSent,
+              whatsappSentAt: whatsappSent ? new Date() : null,
+            },
+          });
 
-        return { referenceId: reference.id, sent: whatsappSent };
-      } catch (error) {
-        logger.error('Error updating WhatsApp status', {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          referenceId: reference.id,
-        });
-        return { referenceId: reference.id, sent: false };
+          return { referenceId: reference.id, sent: whatsappSent };
+        } catch (error) {
+          logger.error('Error updating WhatsApp status', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            referenceId: reference.id,
+          });
+          return { referenceId: reference.id, sent: false };
+        }
       }
-    });
+    );
 
     // Wait for all notifications to complete
     const notificationResults = await Promise.all(notificationPromises);
@@ -356,7 +447,7 @@ export const addUserReferences = async (
     await logReferenceCreation(userId, createdReferences, req);
 
     // Index references in Elasticsearch for search functionality
-    const indexingPromises = createdReferences.map(async reference => {
+    const indexingPromises = createdReferences.map(async (reference: any) => {
       try {
         await searchService.indexReference({
           ...reference,
@@ -392,7 +483,7 @@ export const addUserReferences = async (
       userId,
       userName: user.fullName,
       referenceCount: createdReferences.length,
-      whatsappSent: notificationResults.filter(r => r.sent).length,
+      whatsappSent: notificationResults.filter((r: any) => r.sent).length,
     });
 
     return {
@@ -492,7 +583,7 @@ export const getAllReferencesWithFilters = async (
 ) => {
   try {
     // Build where clause
-    const where: any = {};
+    const where: Prisma.ReferenceWhereInput = {};
 
     if (status && Object.values(ReferenceStatus).includes(status)) {
       where.status = status;

@@ -1,5 +1,5 @@
 // Simple test for admin authentication
-const http = require('http');
+import http from 'http';
 
 function makeRequest(options, data) {
   return new Promise((resolve, reject) => {

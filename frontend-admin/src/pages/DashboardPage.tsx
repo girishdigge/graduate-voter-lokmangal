@@ -27,8 +27,8 @@ export const DashboardPage: React.FC = () => {
           ]);
 
         setStats(statsData);
-        setRecentVoters(recentVotersData);
-        setRecentlyVerified(recentlyVerifiedData);
+        setRecentVoters(recentVotersData || []);
+        setRecentlyVerified(recentlyVerifiedData || []);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('Failed to load dashboard data. Please try again.');

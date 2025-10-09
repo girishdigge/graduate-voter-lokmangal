@@ -23,8 +23,9 @@ export interface AuthContextType {
 export interface AuthResponse {
   success: boolean;
   data?: {
-    user: AdminUser;
+    admin: AdminUser;
     token: string;
+    message: string;
   };
   error?: {
     code: string;

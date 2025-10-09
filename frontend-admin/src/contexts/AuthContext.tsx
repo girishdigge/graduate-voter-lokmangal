@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       );
 
       if (response.data.success && response.data.data) {
-        const { user: userData, token } = response.data.data;
+        const { admin: userData, token } = response.data.data;
 
         // Store token and user data
         localStorage.setItem('admin_token', token);
