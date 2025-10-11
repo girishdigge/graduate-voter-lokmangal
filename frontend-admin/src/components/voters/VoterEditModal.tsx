@@ -56,6 +56,7 @@ export const VoterEditModal: React.FC<VoterEditModalProps> = ({
 
   useEffect(() => {
     if (voter) {
+      console.log('VoterEditModal - Voter data received:', voter);
       reset({
         fullName: voter.fullName,
         sex: voter.sex,

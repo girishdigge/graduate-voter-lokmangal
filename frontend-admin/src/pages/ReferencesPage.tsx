@@ -21,7 +21,7 @@ export const ReferencesPage: React.FC = () => {
   const [filters, setFilters] = useState<ReferenceFilters>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [sorting, setSorting] = useState<SortingState>([
-    { id: 'createdAt', desc: true },
+    { id: 'created_at', desc: true },
   ]);
   const [isAddReferenceModalOpen, setIsAddReferenceModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>('');

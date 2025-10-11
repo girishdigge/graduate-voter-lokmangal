@@ -667,7 +667,7 @@ export const getVoters = async (
       query: q,
       filters,
       options,
-      resultCount: result.data.length,
+      resultCount: result.voters.length,
       totalResults: result.pagination.total,
     });
 
@@ -1122,7 +1122,7 @@ export const getManagers = async (
 
     res.status(200).json({
       success: true,
-      data: result.data,
+      data: result,
       pagination: result.pagination,
     });
   } catch (error) {

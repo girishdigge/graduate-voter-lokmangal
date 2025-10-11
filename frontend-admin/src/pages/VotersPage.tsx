@@ -9,7 +9,9 @@ import { VoterDetailModal } from '../components/voters/VoterDetailModal';
 import { VoterEditModal } from '../components/voters/VoterEditModal';
 import { AddReferenceModal } from '../components/references/AddReferenceModal';
 import { Pagination, Button, LoadingSpinner } from '../components/ui';
+
 import { voterApi } from '../lib/voterApi';
+
 import type {
   Voter,
   VoterFilters,
@@ -25,7 +27,7 @@ export const VotersPage: React.FC = () => {
   const [filters, setFilters] = useState<VoterFilters>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [sorting, setSorting] = useState<SortingState>([
-    { id: 'createdAt', desc: true },
+    { id: 'created_at', desc: true },
   ]);
   const [selectedVoter, setSelectedVoter] = useState<Voter | null>(null);
   const [editingVoter, setEditingVoter] = useState<Voter | null>(null);
@@ -56,6 +58,7 @@ export const VotersPage: React.FC = () => {
     queryKey: ['voters', searchParams],
     queryFn: () => voterApi.getVoters(searchParams),
     placeholderData: previousData => previousData,
+    retry: 1,
   });
 
   // Fetch voter details for modal
@@ -82,6 +85,9 @@ export const VotersPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['voter-details'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
     },
+    onError: error => {
+      console.error('Verify voter mutation error:', error);
+    },
   });
 
   // Update voter mutation
@@ -96,6 +102,9 @@ export const VotersPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voters'] });
       queryClient.invalidateQueries({ queryKey: ['voter-details'] });
+    },
+    onError: error => {
+      console.error('Update voter mutation error:', error);
     },
   });
 
@@ -125,6 +134,7 @@ export const VotersPage: React.FC = () => {
   }, []);
 
   const handleViewDetails = useCallback((voter: Voter) => {
+    console.log('Selected voter data:', voter);
     setSelectedVoter(voter);
     setShowDetailModal(true);
   }, []);
@@ -170,7 +180,6 @@ export const VotersPage: React.FC = () => {
 
   const voters = votersData?.data?.voters || [];
   const pagination = votersData?.data?.pagination;
-  const voterDetails = voterDetailsData?.data?.user || null;
 
   return (
     <div className="space-y-6">
@@ -275,7 +284,7 @@ export const VotersPage: React.FC = () => {
       <VoterDetailModal
         isOpen={showDetailModal}
         onClose={handleCloseDetailModal}
-        voter={voterDetails || selectedVoter}
+        voter={voterDetailsData?.data?.user || selectedVoter}
         isLoading={isLoadingDetails}
         onVerify={handleVerifyVoter}
         onEdit={handleEditVoter}

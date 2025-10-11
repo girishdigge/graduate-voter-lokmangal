@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from 'axios';
 
 const BASE_URL = 'http://localhost:3000/api';
 
@@ -13,7 +13,7 @@ async function testAdminEndpoints() {
     console.log('1. Admin Login...');
     const loginResponse = await axios.post(`${BASE_URL}/admin/login`, {
       username: 'admin',
-      password: 'admin123',
+      password: 'Admin@123',
     });
 
     if (loginResponse.data.success) {

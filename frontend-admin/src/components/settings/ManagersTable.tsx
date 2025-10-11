@@ -20,7 +20,7 @@ export const ManagersTable: React.FC = () => {
     search: '',
     role: undefined,
     isActive: undefined,
-    sort_by: 'createdAt',
+    sort_by: 'created_at',
     sort_order: 'desc',
   });
 
@@ -92,8 +92,8 @@ export const ManagersTable: React.FC = () => {
     );
   }
 
-  const managers = managersData?.data || [];
-  const pagination = managersData?.pagination;
+  const managers = managersData?.data?.managers || [];
+  const pagination = managersData?.data?.pagination;
 
   return (
     <div className="space-y-6">

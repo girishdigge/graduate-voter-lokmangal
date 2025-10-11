@@ -471,9 +471,9 @@ export const getVotersWithPagination = async (
     // Search query (if provided)
     if (searchQuery && searchQuery.trim()) {
       where.OR = [
-        { fullName: { contains: searchQuery, mode: 'insensitive' } },
+        { fullName: { contains: searchQuery } },
         { contact: { contains: searchQuery } },
-        { email: { contains: searchQuery, mode: 'insensitive' } },
+        { email: { contains: searchQuery } },
         { aadharNumber: { contains: searchQuery } },
       ];
     }
@@ -496,11 +496,11 @@ export const getVotersWithPagination = async (
     }
 
     if (filters.city) {
-      where.city = { contains: filters.city, mode: 'insensitive' };
+      where.city = { contains: filters.city };
     }
 
     if (filters.state) {
-      where.state = { contains: filters.state, mode: 'insensitive' };
+      where.state = { contains: filters.state };
     }
 
     // Age range filtering
@@ -570,14 +570,14 @@ export const getVotersWithPagination = async (
     const hasPrevPage = page > 1;
 
     return {
-      data: voters,
+      voters: voters,
       pagination: {
         page,
         limit,
         total,
         totalPages,
-        hasNextPage,
-        hasPrevPage,
+        hasNext: hasNextPage,
+        hasPrev: hasPrevPage,
       },
     };
   } catch (error) {
@@ -998,14 +998,14 @@ export const getManagersWithPagination = async (
     const hasPrevPage = page > 1;
 
     return {
-      data: managers,
+      managers: managers,
       pagination: {
         page,
         limit,
         total,
         totalPages,
-        hasNextPage,
-        hasPrevPage,
+        hasNext: hasNextPage,
+        hasPrev: hasPrevPage,
       },
     };
   } catch (error) {

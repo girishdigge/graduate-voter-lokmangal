@@ -54,12 +54,16 @@ export interface ManagerResponse {
 
 export interface ManagerListResponse {
   success: boolean;
-  data: Manager[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
+  data: {
+    managers: Manager[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
   };
   error?: {
     code: string;

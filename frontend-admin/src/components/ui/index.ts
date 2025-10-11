@@ -7,3 +7,4 @@ export { Modal } from './Modal';
 export { Badge } from './Badge';
 export { Pagination } from './Pagination';
 export { Checkbox } from './Checkbox';
+export { ErrorBoundary } from './ErrorBoundary';

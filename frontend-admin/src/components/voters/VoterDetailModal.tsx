@@ -7,8 +7,12 @@ import {
   Mail,
   FileText,
   Users,
+  GraduationCap,
+  Vote,
+  Shield,
+  Edit,
 } from 'lucide-react';
-import { Modal, Badge, LoadingSpinner } from '../ui';
+import { Modal, Badge, LoadingSpinner, Button } from '../ui';
 import { VerifyButton } from './VerifyButton';
 import type { Voter } from '../../types/voter';
 
@@ -29,6 +33,7 @@ export const VoterDetailModal: React.FC<VoterDetailModalProps> = ({
   onVerify,
   onEdit,
 }) => {
+  console.log('VoterDetailModal received voter data:', voter);
   if (!voter && !isLoading) return null;
 
   const handleVerify = async (isVerified: boolean) => {
@@ -38,48 +43,72 @@ export const VoterDetailModal: React.FC<VoterDetailModalProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    if (!dateString) return 'Not provided';
+    try {
+      return new Date(dateString).toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    } catch {
+      return 'Invalid Date';
+    }
+  };
+
+  const formatDisabilities = (disabilities: string | null) => {
+    if (!disabilities) return 'None';
+    try {
+      const disabilityList = JSON.parse(disabilities);
+      const disabilityLabels = {
+        VISUAL_IMPAIRMENT: 'Visual Impairment',
+        SPEECH_AND_HEARING_DISABILITY: 'Speech and Hearing Disability',
+        LOCOMOTOR_DISABILITY: 'Locomotor Disability',
+        OTHER: 'Other',
+      };
+      return disabilityList
+        .map(
+          (d: string) =>
+            disabilityLabels[d as keyof typeof disabilityLabels] || d
+        )
+        .join(', ');
+    } catch {
+      return disabilities;
+    }
+  };
+
+  const maskAadhar = (aadhar: string) => {
+    if (!aadhar || aadhar.length < 8) return aadhar;
+    return aadhar.slice(0, 4) + '****' + aadhar.slice(-4);
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={voter ? `Voter Details - ${voter.fullName}` : 'Loading...'}
-      size="xl"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Profile Details" size="xl">
       {isLoading ? (
         <div className="flex justify-center py-8">
           <LoadingSpinner size="lg" />
         </div>
       ) : voter ? (
         <div className="space-y-6">
-          {/* Header with verification status and actions */}
+          {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b">
-            <div className="flex items-center gap-3">
-              <Badge
-                variant={voter.isVerified ? 'success' : 'warning'}
-                size="md"
-              >
-                {voter.isVerified ? 'Verified' : 'Unverified'}
-              </Badge>
-              {voter.verifiedByAdmin && (
-                <span className="text-sm text-gray-600">
-                  by {voter.verifiedByAdmin.fullName}
-                </span>
-              )}
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {voter.fullName}
+              </h2>
+              <p className="text-sm text-gray-600">
+                Complete profile information
+              </p>
             </div>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 onClick={() => onEdit(voter)}
-                className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                variant="secondary"
+                size="sm"
+                className="flex items-center gap-1"
               >
+                <Edit className="h-4 w-4" />
                 Edit
-              </button>
+              </Button>
               <VerifyButton
                 isVerified={voter.isVerified}
                 onVerify={handleVerify}
@@ -87,135 +116,163 @@ export const VoterDetailModal: React.FC<VoterDetailModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-8">
             {/* Personal Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Personal Information
-              </h3>
-              <div className="space-y-3">
+            <div>
+              <div className="flex items-center mb-4">
+                <User className="h-5 w-5 text-gray-400 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Personal Information
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Full Name
                   </label>
                   <p className="text-gray-900">{voter.fullName}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Sex
-                    </label>
-                    <p className="text-gray-900">{voter.sex}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Age
-                    </label>
-                    <p className="text-gray-900">{voter.age} years</p>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Sex
+                  </label>
+                  <p className="text-gray-900">{voter.sex}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Guardian/Spouse
+                  </label>
+                  <p className="text-gray-900">
+                    {voter.guardianSpouse || 'Not provided'}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Date of Birth
                   </label>
-                  <p className="text-gray-900 flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {formatDate(voter.dateOfBirth)}
+                  <p className="text-gray-900">
+                    {voter.dateOfBirth
+                      ? `${formatDate(voter.dateOfBirth)} (Age: ${voter.age})`
+                      : 'Not provided'}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Aadhar Number
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Occupation
                   </label>
-                  <p className="text-gray-900 font-mono">
-                    {voter.aadharNumber}
+                  <p className="text-gray-900">
+                    {voter.occupation || 'Not provided'}
                   </p>
                 </div>
-                {voter.guardianSpouse && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Guardian/Spouse
-                    </label>
-                    <p className="text-gray-900">{voter.guardianSpouse}</p>
-                  </div>
-                )}
-                {voter.qualification && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Qualification
-                    </label>
-                    <p className="text-gray-900">{voter.qualification}</p>
-                  </div>
-                )}
-                {voter.occupation && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Occupation
-                    </label>
-                    <p className="text-gray-900">{voter.occupation}</p>
-                  </div>
-                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Qualification
+                  </label>
+                  <p className="text-gray-900">
+                    {voter.qualification || 'Not provided'}
+                  </p>
+                </div>
               </div>
             </div>
 
             {/* Contact Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <Phone className="h-5 w-5" />
-                Contact Information
-              </h3>
-              <div className="space-y-3">
+            <div>
+              <div className="flex items-center mb-4">
+                <Phone className="h-5 w-5 text-gray-400 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Contact Information
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Contact Number
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number
                   </label>
                   <p className="text-gray-900 flex items-center gap-1">
                     <Phone className="h-4 w-4" />
                     {voter.contact}
                   </p>
                 </div>
-                {voter.email && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Email
-                    </label>
-                    <p className="text-gray-900 flex items-center gap-1">
-                      <Mail className="h-4 w-4" />
-                      {voter.email}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Address Information */}
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mt-6">
-                <MapPin className="h-5 w-5" />
-                Address
-              </h3>
-              <div className="space-y-2">
-                <p className="text-gray-900">
-                  {voter.houseNumber}, {voter.street}
-                </p>
-                <p className="text-gray-900">{voter.area}</p>
-                <p className="text-gray-900">
-                  {voter.city}, {voter.state} - {voter.pincode}
-                </p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address
+                  </label>
+                  <p className="text-gray-900 flex items-center gap-1">
+                    <Mail className="h-4 w-4" />
+                    {voter.email || 'Not provided'}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Elector Information */}
-          {voter.isRegisteredElector && (
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                <FileText className="h-5 w-5" />
-                Elector Information
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Address Information */}
+            <div>
+              <div className="flex items-center mb-4">
+                <MapPin className="h-5 w-5 text-gray-400 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Address Information
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    House Number
+                  </label>
+                  <p className="text-gray-900">{voter.houseNumber}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Street
+                  </label>
+                  <p className="text-gray-900">{voter.street}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Area
+                  </label>
+                  <p className="text-gray-900">{voter.area}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    City
+                  </label>
+                  <p className="text-gray-900">{voter.city}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    State
+                  </label>
+                  <p className="text-gray-900">{voter.state}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Pincode
+                  </label>
+                  <p className="text-gray-900">{voter.pincode}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Electoral Information */}
+            <div>
+              <div className="flex items-center mb-4">
+                <Vote className="h-5 w-5 text-gray-400 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Electoral Information
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Registered Elector
+                  </label>
+                  <p className="text-gray-900">
+                    {voter.isRegisteredElector ? 'Yes' : 'No'}
+                  </p>
+                </div>
                 {voter.assemblyNumber && (
                   <div>
-                    <label className="text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Assembly Number
                     </label>
                     <p className="text-gray-900">{voter.assemblyNumber}</p>
@@ -223,7 +280,7 @@ export const VoterDetailModal: React.FC<VoterDetailModalProps> = ({
                 )}
                 {voter.assemblyName && (
                   <div>
-                    <label className="text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Assembly Name
                     </label>
                     <p className="text-gray-900">{voter.assemblyName}</p>
@@ -231,7 +288,7 @@ export const VoterDetailModal: React.FC<VoterDetailModalProps> = ({
                 )}
                 {voter.pollingStationNumber && (
                   <div>
-                    <label className="text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Polling Station
                     </label>
                     <p className="text-gray-900">
@@ -241,7 +298,7 @@ export const VoterDetailModal: React.FC<VoterDetailModalProps> = ({
                 )}
                 {voter.epicNumber && (
                   <div>
-                    <label className="text-sm font-medium text-gray-500">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       EPIC Number
                     </label>
                     <p className="text-gray-900 font-mono">
@@ -249,133 +306,149 @@ export const VoterDetailModal: React.FC<VoterDetailModalProps> = ({
                     </p>
                   </div>
                 )}
-                {voter.disabilities && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Disabilities (if any)
+                  </label>
+                  <p className="text-gray-900">
+                    {formatDisabilities(voter.disabilities)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Education Information */}
+            {(voter.university ||
+              voter.graduationYear ||
+              voter.graduationDocType) && (
+              <div>
+                <div className="flex items-center mb-4">
+                  <GraduationCap className="h-5 w-5 text-gray-400 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Education Information
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Disabilities
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      University
                     </label>
                     <p className="text-gray-900">
-                      {(() => {
-                        try {
-                          const disabilityList = JSON.parse(voter.disabilities);
-                          const disabilityLabels = {
-                            VISUAL_IMPAIRMENT: 'Visual Impairment',
-                            SPEECH_AND_HEARING_DISABILITY:
-                              'Speech and Hearing Disability',
-                            LOCOMOTOR_DISABILITY: 'Locomotor Disability',
-                            OTHER: 'Other',
-                          };
-                          return disabilityList
-                            .map(
-                              (d: string) =>
-                                disabilityLabels[
-                                  d as keyof typeof disabilityLabels
-                                ] || d
-                            )
-                            .join(', ');
-                        } catch {
-                          return voter.disabilities;
-                        }
-                      })()}
+                      {voter.university || 'Not provided'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Graduation Year
+                    </label>
+                    <p className="text-gray-900">
+                      {voter.graduationYear || 'Not provided'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Document Type
+                    </label>
+                    <p className="text-gray-900">
+                      {voter.graduationDocType || 'Not provided'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* System Information */}
+            <div>
+              <div className="flex items-center mb-4">
+                <Shield className="h-5 w-5 text-gray-400 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  System Information
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Aadhar Number
+                  </label>
+                  <p className="text-gray-900 font-mono">
+                    {maskAadhar(voter.aadharNumber)}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Registration Date
+                  </label>
+                  <p className="text-gray-900">{formatDate(voter.createdAt)}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Verification Status
+                  </label>
+                  <Badge
+                    variant={voter.isVerified ? 'success' : 'warning'}
+                    size="sm"
+                  >
+                    {voter.isVerified ? 'Verified' : 'Pending Verification'}
+                  </Badge>
+                </div>
+                {voter.verifiedAt && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Verified Date
+                    </label>
+                    <p className="text-gray-900">
+                      {formatDate(voter.verifiedAt)}
                     </p>
                   </div>
                 )}
               </div>
             </div>
-          )}
 
-          {/* Education Information */}
-          {(voter.university ||
-            voter.graduationYear ||
-            voter.graduationDocType) && (
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Education
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {voter.university && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      University
-                    </label>
-                    <p className="text-gray-900">{voter.university}</p>
-                  </div>
-                )}
-                {voter.graduationYear && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Graduation Year
-                    </label>
-                    <p className="text-gray-900">{voter.graduationYear}</p>
-                  </div>
-                )}
-                {voter.graduationDocType && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Document Type
-                    </label>
-                    <p className="text-gray-900">{voter.graduationDocType}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* References */}
-          {voter.references && voter.references.length > 0 && (
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                <Users className="h-5 w-5" />
-                References ({voter.references.length})
-              </h3>
-              <div className="space-y-3">
-                {voter.references.map(reference => (
-                  <div
-                    key={reference.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {reference.referenceName}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {reference.referenceContact}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={
-                          reference.status === 'APPLIED'
-                            ? 'success'
-                            : reference.status === 'CONTACTED'
-                              ? 'info'
-                              : 'warning'
-                        }
-                        size="sm"
-                      >
-                        {reference.status}
-                      </Badge>
-                      {reference.whatsappSent && (
-                        <Badge variant="info" size="sm">
-                          WhatsApp Sent
+            {/* References */}
+            {voter.references && voter.references.length > 0 && (
+              <div>
+                <div className="flex items-center mb-4">
+                  <Users className="h-5 w-5 text-gray-400 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    References ({voter.references.length})
+                  </h3>
+                </div>
+                <div className="space-y-3">
+                  {voter.references.map(reference => (
+                    <div
+                      key={reference.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {reference.referenceName}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {reference.referenceContact}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={
+                            reference.status === 'APPLIED'
+                              ? 'success'
+                              : reference.status === 'CONTACTED'
+                                ? 'info'
+                                : 'warning'
+                          }
+                          size="sm"
+                        >
+                          {reference.status}
                         </Badge>
-                      )}
+                        {reference.whatsappSent && (
+                          <Badge variant="info" size="sm">
+                            WhatsApp Sent
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Timestamps */}
-          <div className="border-t pt-6 text-sm text-gray-500">
-            <div className="flex justify-between">
-              <span>Created: {formatDate(voter.createdAt)}</span>
-              <span>Updated: {formatDate(voter.updatedAt)}</span>
-            </div>
-            {voter.verifiedAt && (
-              <div className="mt-1">
-                <span>Verified: {formatDate(voter.verifiedAt)}</span>
+                  ))}
+                </div>
               </div>
             )}
           </div>

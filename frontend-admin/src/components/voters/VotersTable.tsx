@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
+// @ts-ignore - TypeScript module resolution issue with @tanstack/react-table
 import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
   flexRender,
   createColumnHelper,
-  type SortingState,
 } from '@tanstack/react-table';
 import {
   ChevronUp,
@@ -19,6 +19,12 @@ import {
 import { Badge, Button } from '../ui';
 import { VerifyButton } from './VerifyButton';
 import type { Voter } from '../../types/voter';
+
+// Define SortingState type locally to avoid import issues
+type SortingState = Array<{
+  id: string;
+  desc: boolean;
+}>;
 
 interface VotersTableProps {
   data: Voter[];
@@ -46,6 +52,7 @@ export const VotersTable: React.FC<VotersTableProps> = ({
   const columns = useMemo(
     () => [
       columnHelper.accessor('fullName', {
+        id: 'full_name',
         header: 'Name',
         cell: info => (
           <div>
@@ -94,6 +101,7 @@ export const VotersTable: React.FC<VotersTableProps> = ({
         ),
       }),
       columnHelper.accessor('assemblyNumber', {
+        id: 'assembly_number',
         header: 'Assembly',
         cell: info => {
           const assemblyNumber = info.getValue();
@@ -122,6 +130,7 @@ export const VotersTable: React.FC<VotersTableProps> = ({
         ),
       }),
       columnHelper.accessor('createdAt', {
+        id: 'created_at',
         header: 'Enrolled',
         cell: info => (
           <div className="text-sm text-gray-600">
@@ -133,21 +142,21 @@ export const VotersTable: React.FC<VotersTableProps> = ({
         id: 'actions',
         header: 'Actions',
         cell: info => (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 min-w-[120px]">
             <Button
               size="sm"
-              variant="ghost"
+              variant="secondary"
               onClick={() => onViewDetails(info.row.original)}
-              className="p-1"
+              className="p-2 mr-1 bg-blue-100 hover:bg-blue-200 text-blue-700 border border-blue-300"
               title="View Details"
             >
               <Eye className="h-4 w-4" />
             </Button>
             <Button
               size="sm"
-              variant="ghost"
+              variant="secondary"
               onClick={() => onEditVoter(info.row.original)}
-              className="p-1"
+              className="p-2 mr-1 bg-green-100 hover:bg-green-200 text-green-700 border border-green-300"
               title="Edit Voter"
             >
               <Edit className="h-4 w-4" />

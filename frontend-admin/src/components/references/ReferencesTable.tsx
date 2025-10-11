@@ -97,6 +97,7 @@ export const ReferencesTable: React.FC<ReferencesTableProps> = ({
 
       // Reference Information
       columnHelper.accessor('referenceName', {
+        id: 'reference_name',
         header: 'Reference Details',
         cell: info => (
           <div>
@@ -170,6 +171,7 @@ export const ReferencesTable: React.FC<ReferencesTableProps> = ({
 
       // Created Date
       columnHelper.accessor('createdAt', {
+        id: 'created_at',
         header: 'Added',
         cell: info => (
           <div className="text-sm text-gray-600">
