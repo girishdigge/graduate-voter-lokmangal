@@ -116,6 +116,7 @@ export interface VoterUpdateData {
   guardianSpouse?: string;
   qualification?: string;
   occupation?: string;
+  dateOfBirth?: string;
   contact?: string;
   email?: string;
   houseNumber?: string;
@@ -124,10 +125,12 @@ export interface VoterUpdateData {
   city?: string;
   state?: string;
   pincode?: string;
+  isRegisteredElector?: boolean;
   assemblyNumber?: string;
   assemblyName?: string;
   pollingStationNumber?: string;
   epicNumber?: string;
+  disabilities?: string;
   university?: string;
   graduationYear?: number;
   graduationDocType?: string;

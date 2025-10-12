@@ -11,6 +11,7 @@ const voterUpdateSchema = z.object({
   guardianSpouse: z.string().optional(),
   qualification: z.string().optional(),
   occupation: z.string().optional(),
+  dateOfBirth: z.string().optional(),
   contact: z.string().min(10, 'Contact number must be at least 10 digits'),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
   houseNumber: z.string().min(1, 'House number is required'),
@@ -19,10 +20,12 @@ const voterUpdateSchema = z.object({
   city: z.string().min(1, 'City is required'),
   state: z.string().min(1, 'State is required'),
   pincode: z.string().min(6, 'Pincode must be at least 6 digits'),
+  isRegisteredElector: z.boolean().optional(),
   assemblyNumber: z.string().optional(),
   assemblyName: z.string().optional(),
   pollingStationNumber: z.string().optional(),
   epicNumber: z.string().optional(),
+
   university: z.string().optional(),
   graduationYear: z.number().optional(),
   graduationDocType: z.string().optional(),
@@ -44,6 +47,7 @@ export const VoterEditModal: React.FC<VoterEditModalProps> = ({
   isLoading = false,
 }) => {
   const [isSaving, setIsSaving] = useState(false);
+  const [currentDisabilities, setCurrentDisabilities] = useState<string[]>([]);
 
   const {
     register,
@@ -54,15 +58,34 @@ export const VoterEditModal: React.FC<VoterEditModalProps> = ({
     resolver: zodResolver(voterUpdateSchema),
   });
 
+  const disabilityOptions = [
+    { value: 'VISUAL_IMPAIRMENT', label: 'Visual Impairment' },
+    {
+      value: 'SPEECH_AND_HEARING_DISABILITY',
+      label: 'Speech and Hearing Disability',
+    },
+    { value: 'LOCOMOTOR_DISABILITY', label: 'Locomotor Disability' },
+    { value: 'OTHER', label: 'Other' },
+  ];
+
   useEffect(() => {
     if (voter) {
       console.log('VoterEditModal - Voter data received:', voter);
-      reset({
+      console.log('VoterEditModal - dateOfBirth:', voter.dateOfBirth);
+      console.log('VoterEditModal - disabilities:', voter.disabilities);
+      console.log('VoterEditModal - guardianSpouse:', voter.guardianSpouse);
+      console.log('VoterEditModal - qualification:', voter.qualification);
+      console.log('VoterEditModal - occupation:', voter.occupation);
+
+      const formData = {
         fullName: voter.fullName,
         sex: voter.sex,
         guardianSpouse: voter.guardianSpouse || '',
         qualification: voter.qualification || '',
         occupation: voter.occupation || '',
+        dateOfBirth: voter.dateOfBirth
+          ? new Date(voter.dateOfBirth).toISOString().split('T')[0]
+          : '',
         contact: voter.contact,
         email: voter.email || '',
         houseNumber: voter.houseNumber,
@@ -71,16 +94,47 @@ export const VoterEditModal: React.FC<VoterEditModalProps> = ({
         city: voter.city,
         state: voter.state,
         pincode: voter.pincode,
+        isRegisteredElector: voter.isRegisteredElector || false,
         assemblyNumber: voter.assemblyNumber || '',
         assemblyName: voter.assemblyName || '',
         pollingStationNumber: voter.pollingStationNumber || '',
         epicNumber: voter.epicNumber || '',
+
         university: voter.university || '',
         graduationYear: voter.graduationYear || undefined,
         graduationDocType: voter.graduationDocType || '',
-      });
+      };
+
+      console.log('VoterEditModal - Form data being set:', formData);
+      reset(formData);
+
+      // Parse disabilities separately
+      if (voter.disabilities) {
+        try {
+          const parsed = JSON.parse(voter.disabilities);
+          setCurrentDisabilities(Array.isArray(parsed) ? parsed : []);
+        } catch {
+          setCurrentDisabilities([]);
+        }
+      } else {
+        setCurrentDisabilities([]);
+      }
     }
   }, [voter, reset]);
+
+  const handleDisabilityChange = (value: string, checked: boolean) => {
+    let newDisabilities: string[];
+
+    if (checked) {
+      newDisabilities = currentDisabilities.includes(value)
+        ? currentDisabilities
+        : [...currentDisabilities, value];
+    } else {
+      newDisabilities = currentDisabilities.filter(d => d !== value);
+    }
+
+    setCurrentDisabilities(newDisabilities);
+  };
 
   const onSubmit = async (data: VoterUpdateData) => {
     if (!voter) return;
@@ -97,6 +151,12 @@ export const VoterEditModal: React.FC<VoterEditModalProps> = ({
         return acc;
       }, {} as VoterUpdateData);
 
+      // Add disabilities as JSON string
+      cleanData.disabilities =
+        currentDisabilities.length > 0
+          ? JSON.stringify(currentDisabilities)
+          : undefined;
+
       await onSave(voter.id, cleanData);
       onClose();
     } catch (error) {
@@ -110,6 +170,20 @@ export const VoterEditModal: React.FC<VoterEditModalProps> = ({
     { value: 'MALE', label: 'Male' },
     { value: 'FEMALE', label: 'Female' },
     { value: 'OTHER', label: 'Other' },
+  ];
+
+  const qualificationOptions = [
+    { value: 'GRADUATE', label: 'Graduate' },
+    { value: 'POST_GRADUATE', label: 'Post Graduate' },
+    { value: 'PROFESSIONAL', label: 'Professional Degree' },
+    { value: 'OTHER', label: 'Other' },
+  ];
+
+  const graduationDocTypeOptions = [
+    { value: 'DEGREE_CERTIFICATE', label: 'Degree Certificate' },
+    { value: 'DIPLOMA', label: 'Diploma Certificate' },
+    { value: 'MARKSHEET', label: 'Final Year Marksheet' },
+    { value: 'OTHER', label: 'Other Document' },
   ];
 
   return (
@@ -142,15 +216,23 @@ export const VoterEditModal: React.FC<VoterEditModalProps> = ({
               {...register('guardianSpouse')}
               error={errors.guardianSpouse?.message}
             />
-            <Input
+            <Select
               label="Qualification"
               {...register('qualification')}
+              options={qualificationOptions}
               error={errors.qualification?.message}
             />
             <Input
               label="Occupation"
+              placeholder="Enter your occupation"
               {...register('occupation')}
               error={errors.occupation?.message}
+            />
+            <Input
+              label="Date of Birth"
+              type="date"
+              {...register('dateOfBirth')}
+              error={errors.dateOfBirth?.message}
             />
           </div>
         </div>
@@ -218,6 +300,21 @@ export const VoterEditModal: React.FC<VoterEditModalProps> = ({
             Elector Information
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                id="isRegisteredElector"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                {...register('isRegisteredElector')}
+              />
+              <label
+                htmlFor="isRegisteredElector"
+                className="text-sm font-medium text-gray-700"
+              >
+                Registered Elector
+              </label>
+            </div>
+            <div></div>
             <Input
               label="Assembly Number"
               {...register('assemblyNumber')}
@@ -241,6 +338,34 @@ export const VoterEditModal: React.FC<VoterEditModalProps> = ({
           </div>
         </div>
 
+        {/* Disabilities Information */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Disabilities (if any)
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {disabilityOptions.map(option => (
+              <div key={option.value} className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  id={`disability-${option.value}`}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  checked={currentDisabilities.includes(option.value)}
+                  onChange={e =>
+                    handleDisabilityChange(option.value, e.target.checked)
+                  }
+                />
+                <label
+                  htmlFor={`disability-${option.value}`}
+                  className="text-sm text-gray-700"
+                >
+                  {option.label}
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Education Information */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -258,9 +383,10 @@ export const VoterEditModal: React.FC<VoterEditModalProps> = ({
               {...register('graduationYear', { valueAsNumber: true })}
               error={errors.graduationYear?.message}
             />
-            <Input
-              label="Graduation Document Type"
+            <Select
+              label="Document Type"
               {...register('graduationDocType')}
+              options={graduationDocTypeOptions}
               error={errors.graduationDocType?.message}
             />
           </div>

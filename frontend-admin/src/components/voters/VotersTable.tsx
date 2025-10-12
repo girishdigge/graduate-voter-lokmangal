@@ -89,38 +89,7 @@ export const VotersTable: React.FC<VotersTableProps> = ({
           </div>
         ),
       }),
-      columnHelper.accessor('city', {
-        header: 'Location',
-        cell: info => (
-          <div>
-            <div className="text-gray-900">{info.getValue()}</div>
-            <div className="text-sm text-gray-500">
-              {info.row.original.state}
-            </div>
-          </div>
-        ),
-      }),
-      columnHelper.accessor('assemblyNumber', {
-        id: 'assembly_number',
-        header: 'Assembly',
-        cell: info => {
-          const assemblyNumber = info.getValue();
-          const pollingStation = info.row.original.pollingStationNumber;
-          return (
-            <div>
-              {assemblyNumber && (
-                <div className="text-gray-900">AC-{assemblyNumber}</div>
-              )}
-              {pollingStation && (
-                <div className="text-sm text-gray-500">PS-{pollingStation}</div>
-              )}
-              {!assemblyNumber && !pollingStation && (
-                <span className="text-gray-400">Not registered</span>
-              )}
-            </div>
-          );
-        },
-      }),
+
       columnHelper.accessor('isVerified', {
         header: 'Status',
         cell: info => (
@@ -161,15 +130,7 @@ export const VotersTable: React.FC<VotersTableProps> = ({
             >
               <Edit className="h-4 w-4" />
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onAddReferences(info.row.original)}
-              className="p-1 text-blue-600 hover:text-blue-700"
-              title="Add References"
-            >
-              <UserPlus className="h-4 w-4" />
-            </Button>
+
             <VerifyButton
               isVerified={info.row.original.isVerified}
               onVerify={isVerified =>

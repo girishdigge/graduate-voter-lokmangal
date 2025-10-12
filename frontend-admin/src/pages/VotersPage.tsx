@@ -71,6 +71,17 @@ export const VotersPage: React.FC = () => {
     enabled: !!selectedVoter && showDetailModal,
   });
 
+  // Fetch voter details for edit modal
+  const { data: editVoterDetailsData, isLoading: isLoadingEditDetails } =
+    useQuery({
+      queryKey: ['voter-edit-details', editingVoter?.id],
+      queryFn: async () => {
+        if (!editingVoter) return null;
+        return voterApi.getVoterDetails(editingVoter.id);
+      },
+      enabled: !!editingVoter && showEditModal,
+    });
+
   // Verify voter mutation
   const verifyMutation = useMutation({
     mutationFn: ({
@@ -294,9 +305,9 @@ export const VotersPage: React.FC = () => {
       <VoterEditModal
         isOpen={showEditModal}
         onClose={handleCloseEditModal}
-        voter={editingVoter}
+        voter={editVoterDetailsData?.data?.user || editingVoter}
         onSave={handleUpdateVoter}
-        isLoading={updateMutation.isPending}
+        isLoading={updateMutation.isPending || isLoadingEditDetails}
       />
 
       {/* Add Reference Modal */}
