@@ -642,10 +642,11 @@ export const getAllReferencesWithFilters = async (
         .filter(word => word.length > 0);
 
       // Build OR conditions for each search word (relaxed matching)
+      // Note: MySQL doesn't support mode: 'insensitive', so we'll use contains without mode
       const searchConditions = searchWords.flatMap(word => [
-        { referenceName: { contains: word, mode: 'insensitive' } },
+        { referenceName: { contains: word } },
         { referenceContact: { contains: word } },
-        { user: { fullName: { contains: word, mode: 'insensitive' } } },
+        { user: { fullName: { contains: word } } },
       ]);
 
       where.OR = searchConditions;

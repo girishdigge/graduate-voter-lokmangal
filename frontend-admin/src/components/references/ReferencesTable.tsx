@@ -6,6 +6,12 @@ import {
   flexRender,
   createColumnHelper,
   type SortingState,
+  type Row,
+  type Cell,
+  type Header,
+  type HeaderGroup,
+  type CellContext,
+  type HeaderContext,
 } from '@tanstack/react-table';
 import {
   ChevronUp,
@@ -78,14 +84,14 @@ export const ReferencesTable: React.FC<ReferencesTableProps> = ({
       // Selection column
       columnHelper.display({
         id: 'select',
-        header: ({ table }) => (
+        header: ({ table }: HeaderContext<Reference, unknown>) => (
           <Checkbox
             checked={table.getIsAllRowsSelected()}
             indeterminate={table.getIsSomeRowsSelected()}
             onChange={checked => handleSelectAll(checked)}
           />
         ),
-        cell: ({ row }) => (
+        cell: ({ row }: CellContext<Reference, unknown>) => (
           <Checkbox
             checked={selectedReferences.includes(row.original.id)}
             onChange={checked =>
@@ -99,7 +105,7 @@ export const ReferencesTable: React.FC<ReferencesTableProps> = ({
       columnHelper.accessor('referenceName', {
         id: 'reference_name',
         header: 'Reference Details',
-        cell: info => (
+        cell: (info: CellContext<Reference, string>) => (
           <div>
             <div className="font-medium text-gray-900 flex items-center gap-2">
               <User className="h-4 w-4 text-gray-400" />
@@ -116,7 +122,7 @@ export const ReferencesTable: React.FC<ReferencesTableProps> = ({
       // Voter Information
       columnHelper.accessor('user.fullName', {
         header: 'Voter',
-        cell: info => (
+        cell: (info: CellContext<Reference, string>) => (
           <div>
             <div className="font-medium text-gray-900">{info.getValue()}</div>
             {info.row.original.user.contact && (
@@ -131,7 +137,9 @@ export const ReferencesTable: React.FC<ReferencesTableProps> = ({
       // Status
       columnHelper.accessor('status', {
         header: 'Status',
-        cell: info => (
+        cell: (
+          info: CellContext<Reference, 'PENDING' | 'CONTACTED' | 'APPLIED'>
+        ) => (
           <StatusDropdown
             currentStatus={info.getValue()}
             onStatusChange={status =>
@@ -145,7 +153,7 @@ export const ReferencesTable: React.FC<ReferencesTableProps> = ({
       // WhatsApp Status
       columnHelper.accessor('whatsappSent', {
         header: 'WhatsApp',
-        cell: info => (
+        cell: (info: CellContext<Reference, boolean>) => (
           <div className="flex items-center gap-2">
             {info.getValue() ? (
               <div className="flex items-center gap-1 text-green-600">
@@ -173,7 +181,7 @@ export const ReferencesTable: React.FC<ReferencesTableProps> = ({
       columnHelper.accessor('createdAt', {
         id: 'created_at',
         header: 'Added',
-        cell: info => (
+        cell: (info: CellContext<Reference, string>) => (
           <div className="text-sm text-gray-600">
             {new Date(info.getValue()).toLocaleDateString('en-IN', {
               day: '2-digit',
@@ -187,7 +195,7 @@ export const ReferencesTable: React.FC<ReferencesTableProps> = ({
       // Last Updated
       columnHelper.accessor('statusUpdatedAt', {
         header: 'Last Updated',
-        cell: info => {
+        cell: (info: CellContext<Reference, string | undefined>) => {
           const updatedAt = info.getValue();
           return (
             <div className="text-sm text-gray-600">
@@ -214,7 +222,9 @@ export const ReferencesTable: React.FC<ReferencesTableProps> = ({
     state: {
       sorting,
     },
-    onSortingChange: updaterOrValue => {
+    onSortingChange: (
+      updaterOrValue: SortingState | ((old: SortingState) => SortingState)
+    ) => {
       const newSorting =
         typeof updaterOrValue === 'function'
           ? updaterOrValue(sorting)
@@ -325,53 +335,57 @@ export const ReferencesTable: React.FC<ReferencesTableProps> = ({
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
-            {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map(header => (
-                  <th
-                    key={header.id}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    {header.isPlaceholder ? null : (
-                      <div
-                        className={`flex items-center gap-2 ${
-                          header.column.getCanSort()
-                            ? 'cursor-pointer select-none'
-                            : ''
-                        }`}
-                        onClick={header.column.getToggleSortingHandler()}
+            {table
+              .getHeaderGroups()
+              .map((headerGroup: HeaderGroup<Reference>) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map(
+                    (header: Header<Reference, unknown>) => (
+                      <th
+                        key={header.id}
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {header.column.getCanSort() && (
-                          <div className="flex flex-col">
-                            <ChevronUp
-                              className={`h-3 w-3 ${
-                                header.column.getIsSorted() === 'asc'
-                                  ? 'text-blue-600'
-                                  : 'text-gray-400'
-                              }`}
-                            />
-                            <ChevronDown
-                              className={`h-3 w-3 -mt-1 ${
-                                header.column.getIsSorted() === 'desc'
-                                  ? 'text-blue-600'
-                                  : 'text-gray-400'
-                              }`}
-                            />
+                        {header.isPlaceholder ? null : (
+                          <div
+                            className={`flex items-center gap-2 ${
+                              header.column.getCanSort()
+                                ? 'cursor-pointer select-none'
+                                : ''
+                            }`}
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                            {header.column.getCanSort() && (
+                              <div className="flex flex-col">
+                                <ChevronUp
+                                  className={`h-3 w-3 ${
+                                    header.column.getIsSorted() === 'asc'
+                                      ? 'text-blue-600'
+                                      : 'text-gray-400'
+                                  }`}
+                                />
+                                <ChevronDown
+                                  className={`h-3 w-3 -mt-1 ${
+                                    header.column.getIsSorted() === 'desc'
+                                      ? 'text-blue-600'
+                                      : 'text-gray-400'
+                                  }`}
+                                />
+                              </div>
+                            )}
                           </div>
                         )}
-                      </div>
-                    )}
-                  </th>
-                ))}
-              </tr>
-            ))}
+                      </th>
+                    )
+                  )}
+                </tr>
+              ))}
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {table.getRowModel().rows.map(row => (
+            {table.getRowModel().rows.map((row: Row<Reference>) => (
               <tr
                 key={row.id}
                 className={`hover:bg-gray-50 ${
@@ -380,7 +394,7 @@ export const ReferencesTable: React.FC<ReferencesTableProps> = ({
                     : ''
                 }`}
               >
-                {row.getVisibleCells().map(cell => (
+                {row.getVisibleCells().map((cell: Cell<Reference, unknown>) => (
                   <td key={cell.id} className="px-6 py-4 whitespace-nowrap">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>

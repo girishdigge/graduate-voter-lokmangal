@@ -36,7 +36,14 @@ export interface ReferenceFilters {
 }
 
 export interface ReferenceSortOptions {
-  sort_by?: 'created_at' | 'updated_at' | 'reference_name';
+  sort_by?:
+    | 'created_at'
+    | 'updated_at'
+    | 'reference_name'
+    | 'user.fullName'
+    | 'status'
+    | 'whatsappSent'
+    | 'statusUpdatedAt';
   sort_order?: 'asc' | 'desc';
 }
 

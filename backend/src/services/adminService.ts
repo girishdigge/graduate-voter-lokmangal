@@ -924,9 +924,9 @@ export const getManagersWithPagination = async (
     // Search query (if provided)
     if (search && search.trim()) {
       where.OR = [
-        { fullName: { contains: search, mode: 'insensitive' } },
-        { username: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
+        { fullName: { contains: search } },
+        { username: { contains: search } },
+        { email: { contains: search } },
       ];
     }
 

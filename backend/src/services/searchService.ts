@@ -30,7 +30,14 @@ export interface SearchOptions {
 export interface ReferenceSearchOptions {
   page?: number;
   limit?: number;
-  sort_by?: 'created_at' | 'updated_at' | 'reference_name';
+  sort_by?:
+    | 'created_at'
+    | 'updated_at'
+    | 'reference_name'
+    | 'user.fullName'
+    | 'status'
+    | 'whatsappSent'
+    | 'statusUpdatedAt';
   sort_order?: 'asc' | 'desc';
 }
 
@@ -79,14 +86,15 @@ class SearchService {
           .filter(word => word.length > 0);
 
         // Build OR conditions for each search word (relaxed matching)
+        // Note: MySQL doesn't support mode: 'insensitive', so we'll use contains without mode
         const searchConditions = searchWords.flatMap(word => [
-          { fullName: { contains: word, mode: 'insensitive' as any } },
+          { fullName: { contains: word } },
           { contact: { contains: word } },
-          { email: { contains: word, mode: 'insensitive' as any } },
+          { email: { contains: word } },
           { aadharNumber: { contains: word } },
-          { assemblyName: { contains: word, mode: 'insensitive' as any } },
-          { qualification: { contains: word, mode: 'insensitive' as any } },
-          { occupation: { contains: word, mode: 'insensitive' as any } },
+          { assemblyName: { contains: word } },
+          { qualification: { contains: word } },
+          { occupation: { contains: word } },
         ]);
 
         where.OR = searchConditions;
@@ -110,11 +118,11 @@ class SearchService {
       }
 
       if (filters.city) {
-        where.city = { contains: filters.city, mode: 'insensitive' as any };
+        where.city = { contains: filters.city };
       }
 
       if (filters.state) {
-        where.state = { contains: filters.state, mode: 'insensitive' as any };
+        where.state = { contains: filters.state };
       }
 
       // Age range filter
@@ -227,11 +235,12 @@ class SearchService {
           .filter(word => word.length > 0);
 
         // Build OR conditions for each search word (relaxed matching)
+        // Note: MySQL doesn't support mode: 'insensitive', so we'll use contains without mode
         const searchConditions = searchWords.flatMap(word => [
-          { referenceName: { contains: word, mode: 'insensitive' as any } },
+          { referenceName: { contains: word } },
           { referenceContact: { contains: word } },
           {
-            user: { fullName: { contains: word, mode: 'insensitive' as any } },
+            user: { fullName: { contains: word } },
           },
         ]);
 
@@ -247,16 +256,35 @@ class SearchService {
         where.userId = filters.user_id;
       }
 
-      // Build orderBy
-      const orderBy: any = {};
-      if (sort_by === 'reference_name') {
-        orderBy.referenceName = sort_order;
-      } else if (sort_by === 'created_at') {
-        orderBy.createdAt = sort_order;
-      } else if (sort_by === 'updated_at') {
-        orderBy.updatedAt = sort_order;
-      } else {
-        orderBy[sort_by] = sort_order;
+      // Build orderBy with safe field mapping
+      let orderBy: any = {};
+
+      switch (sort_by) {
+        case 'reference_name':
+          orderBy = { referenceName: sort_order };
+          break;
+        case 'created_at':
+          orderBy = { createdAt: sort_order };
+          break;
+        case 'updated_at':
+          orderBy = { updatedAt: sort_order };
+          break;
+        case 'statusUpdatedAt':
+          orderBy = { statusUpdatedAt: sort_order };
+          break;
+        case 'whatsappSent':
+          orderBy = { whatsappSent: sort_order };
+          break;
+        case 'status':
+          orderBy = { status: sort_order };
+          break;
+        case 'user.fullName':
+          orderBy = { user: { fullName: sort_order } };
+          break;
+        default:
+          // Default to createdAt if invalid sort field
+          orderBy = { createdAt: 'desc' };
+          break;
       }
 
       // Execute search
@@ -279,28 +307,35 @@ class SearchService {
         prisma.reference.count({ where }),
       ]);
 
-      // Transform data to include user information at root level
+      // Keep the user data nested as expected by frontend
       const transformedData = data.map(reference => ({
         ...reference,
-        user_name: reference.user?.fullName,
-        user_contact: reference.user?.contact,
-        user_aadhar: reference.user?.aadharNumber,
+        user: {
+          id: reference.userId,
+          fullName: reference.user?.fullName || '',
+          contact: reference.user?.contact || '',
+          aadharNumber: reference.user?.aadharNumber || '',
+        },
       }));
 
-      return {
+      const result = {
         data: transformedData,
         total,
         page,
         limit,
         total_pages: Math.ceil(total / limit),
       };
+
+      return result;
     } catch (error) {
       logger.error('Failed to search references', {
         query,
         filters,
         options,
         error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
       });
+
       throw error;
     }
   }
@@ -354,7 +389,6 @@ class SearchService {
         where: {
           fullName: {
             contains: query,
-            mode: 'insensitive' as any,
           },
         },
         select: {

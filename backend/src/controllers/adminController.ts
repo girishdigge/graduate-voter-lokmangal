@@ -131,7 +131,15 @@ const referencesListSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   sort_by: z
-    .enum(['created_at', 'updated_at', 'reference_name'])
+    .enum([
+      'created_at',
+      'updated_at',
+      'reference_name',
+      'user.fullName',
+      'status',
+      'whatsappSent',
+      'statusUpdatedAt',
+    ])
     .default('created_at'),
   sort_order: z.enum(['asc', 'desc']).default('desc'),
 });
@@ -915,6 +923,19 @@ export const getReferences = async (
       options
     );
 
+    // Transform the response to match frontend expectations
+    const response = {
+      references: result.data,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.total_pages,
+        hasNext: result.page < result.total_pages,
+        hasPrev: result.page > 1,
+      },
+    };
+
     logger.info('Admin references list retrieved', {
       adminId,
       query: q,
@@ -926,7 +947,7 @@ export const getReferences = async (
 
     res.status(200).json({
       success: true,
-      data: result,
+      data: response,
     });
   } catch (error) {
     logger.error('Admin references list error', {
