@@ -97,6 +97,9 @@ export const apiEndpoints = {
     api.post(`/references/${userId}`, { references }),
 
   getReferences: (userId: string) => api.get(`/references/${userId}`),
+
+  getReferredContacts: (userId: string) =>
+    api.get(`/references/${userId}/referred`),
 };
 
 export default api;

@@ -7,6 +7,20 @@
 
 const dotenv = require('dotenv');
 
+// Try to use built-in fetch, fallback to node-fetch
+let fetch;
+try {
+  fetch = globalThis.fetch;
+  if (!fetch) {
+    fetch = require('node-fetch');
+  }
+} catch (error) {
+  console.error(
+    '❌ Unable to load fetch. Please install node-fetch: npm install node-fetch'
+  );
+  process.exit(1);
+}
+
 // Load environment variables
 dotenv.config();
 
@@ -98,13 +112,46 @@ async function testAccessToken() {
   }
 }
 
-// Test 3: Check Message Templates
+// Test 3: Check Message Templates (using WhatsApp Business Account ID)
 async function testMessageTemplates() {
   console.log('\n🔍 Test 3: Checking Message Templates...');
 
   try {
+    // First, get the WhatsApp Business Account ID from the phone number
+    const phoneResponse = await fetch(
+      `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_NUMBER_ID}?fields=whatsapp_business_account_id`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!phoneResponse.ok) {
+      const errorData = await phoneResponse.text();
+      console.log('❌ Failed to get WhatsApp Business Account ID');
+      console.log(
+        `   Status: ${phoneResponse.status} ${phoneResponse.statusText}`
+      );
+      console.log(`   Error: ${errorData}`);
+      return false;
+    }
+
+    const phoneData = await phoneResponse.json();
+    const wabId = phoneData.whatsapp_business_account_id;
+
+    if (!wabId) {
+      console.log('❌ WhatsApp Business Account ID not found');
+      return false;
+    }
+
+    console.log(`   WhatsApp Business Account ID: ${wabId}`);
+
+    // Now get message templates using the correct endpoint
     const response = await fetch(
-      `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_NUMBER_ID}/message_templates`,
+      `${WHATSAPP_API_URL}/${wabId}/message_templates`,
       {
         method: 'GET',
         headers: {
@@ -140,6 +187,67 @@ async function testMessageTemplates() {
   }
 }
 
+// Test 4: Test sending a message (dry run - validates API structure)
+async function testMessageSending() {
+  console.log('\n🔍 Test 4: Testing Message API Structure...');
+
+  try {
+    // Test with an invalid phone number to check API structure without actually sending
+    const testPayload = {
+      messaging_product: 'whatsapp',
+      to: '1234567890', // Invalid number for testing
+      type: 'template',
+      template: {
+        name: 'hello_world',
+        language: {
+          code: 'en_US',
+        },
+      },
+    };
+
+    const response = await fetch(
+      `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(testPayload),
+      }
+    );
+
+    const responseData = await response.text();
+
+    if (response.status === 400) {
+      // Check if it's a phone number validation error (expected)
+      if (
+        responseData.includes('phone number') ||
+        responseData.includes('recipient')
+      ) {
+        console.log('✅ Message API structure is valid');
+        console.log('   (Phone number validation error is expected for test)');
+        return true;
+      }
+    }
+
+    if (response.ok) {
+      console.log('✅ Message API is working');
+      console.log('   Response:', responseData);
+      return true;
+    } else {
+      console.log('❌ Message API test failed');
+      console.log(`   Status: ${response.status} ${response.statusText}`);
+      console.log(`   Error: ${responseData}`);
+      return false;
+    }
+  } catch (error) {
+    console.log('❌ Message API test error');
+    console.log(`   Error: ${error.message}`);
+    return false;
+  }
+}
+
 // Run all tests
 async function runTests() {
   const results = [];
@@ -147,6 +255,7 @@ async function runTests() {
   results.push(await testAccessToken());
   results.push(await testPhoneNumberId());
   results.push(await testMessageTemplates());
+  results.push(await testMessageSending());
 
   console.log('\n📊 Test Results Summary:');
   console.log(`✅ Passed: ${results.filter(r => r).length}`);
@@ -167,6 +276,7 @@ async function runTests() {
     console.log(
       '   4. Ensure you have the necessary permissions for the WhatsApp Business API'
     );
+    console.log('   5. Check your network connection and firewall settings');
   }
 }
 

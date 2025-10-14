@@ -62,7 +62,8 @@ export const cleanContactNumber = (contact: string): string => {
  */
 export const formatContactForWhatsApp = (contact: string): string => {
   const cleanContact = cleanContactNumber(contact);
-  return `91${cleanContact}`; // Add India country code
+  // Return without + prefix for WhatsApp API (just country code + number)
+  return `91${cleanContact}`;
 };
 
 /**
@@ -363,26 +364,58 @@ export const addUserReferences = async (
       },
     });
 
-    if (existingReferences.length > 0) {
-      const duplicateContacts = existingReferences.map(
-        (ref: any) =>
-          ref.referenceContact.substring(0, 4) +
-          '****' +
-          ref.referenceContact.substring(8)
-      );
-      throw new AppError(
-        `Reference contacts already exist: ${duplicateContacts.join(', ')}`,
-        409,
-        'REFERENCE_ALREADY_EXISTS'
-      );
+    // Filter out existing references and only add new ones
+    const existingContacts = new Set(
+      existingReferences.map((ref: any) => ref.referenceContact)
+    );
+
+    const newReferences = validatedReferences.filter(
+      (ref: ReferenceData) => !existingContacts.has(ref.referenceContact)
+    );
+
+    const duplicateContacts = validatedReferences.filter((ref: ReferenceData) =>
+      existingContacts.has(ref.referenceContact)
+    );
+
+    // Log information about duplicates (but don't fail)
+    if (duplicateContacts.length > 0) {
+      logger.info('Some references already exist, skipping duplicates', {
+        userId,
+        duplicateCount: duplicateContacts.length,
+        newCount: newReferences.length,
+        duplicateContacts: duplicateContacts.map(
+          ref =>
+            ref.referenceContact.substring(0, 4) +
+            '****' +
+            ref.referenceContact.substring(8)
+        ),
+      });
     }
 
-    // Create references in database transaction
+    // If no new references to add, return success with existing references
+    if (newReferences.length === 0) {
+      logger.info('All references already exist, no new references to add', {
+        userId,
+        totalSubmitted: validatedReferences.length,
+        existingCount: duplicateContacts.length,
+      });
+
+      return {
+        success: true,
+        references: existingReferences,
+        whatsappResults: [],
+        message: `All ${validatedReferences.length} reference(s) already exist. No new references added.`,
+        duplicatesSkipped: duplicateContacts.length,
+        newReferencesAdded: 0,
+      };
+    }
+
+    // Create references in database transaction (only for new references)
     const createdReferences = await prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
         const references = [];
 
-        for (const refData of validatedReferences) {
+        for (const refData of newReferences) {
           const reference = await tx.reference.create({
             data: {
               userId,
@@ -479,18 +512,30 @@ export const addUserReferences = async (
       });
     });
 
-    logger.info('References added successfully', {
+    logger.info('References processed successfully', {
       userId,
       userName: user.fullName,
-      referenceCount: createdReferences.length,
+      totalSubmitted: validatedReferences.length,
+      newReferencesAdded: createdReferences.length,
+      duplicatesSkipped: duplicateContacts.length,
       whatsappSent: notificationResults.filter((r: any) => r.sent).length,
     });
+
+    // Create appropriate success message
+    let message = '';
+    if (duplicateContacts.length > 0 && createdReferences.length > 0) {
+      message = `${createdReferences.length} new reference(s) added successfully. ${duplicateContacts.length} duplicate(s) skipped.`;
+    } else if (createdReferences.length > 0) {
+      message = `${createdReferences.length} reference(s) added successfully.`;
+    }
 
     return {
       success: true,
       references: createdReferences,
       whatsappResults: notificationResults,
-      message: `${createdReferences.length} reference(s) added successfully`,
+      message,
+      duplicatesSkipped: duplicateContacts.length,
+      newReferencesAdded: createdReferences.length,
     };
   } catch (error) {
     if (error instanceof AppError) {
@@ -672,6 +717,172 @@ export const getAllReferencesWithFilters = async (
       'Failed to retrieve references',
       500,
       'REFERENCE_FETCH_FAILED'
+    );
+  }
+};
+
+/**
+ * Get contacts who have referred this user (where user's contact appears as referenceContact)
+ */
+export const getWhoReferredUser = async (userId: string) => {
+  try {
+    // Get user's contact number
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        contact: true,
+        fullName: true,
+      },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+    }
+
+    const cleanUserContact = cleanContactNumber(user.contact);
+
+    // Find all references where this user's contact number appears as referenceContact
+    const whoReferredMe = await prisma.reference.findMany({
+      where: {
+        referenceContact: cleanUserContact,
+      },
+      select: {
+        id: true,
+        referenceName: true,
+        referenceContact: true,
+        status: true,
+        whatsappSent: true,
+        whatsappSentAt: true,
+        statusUpdatedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            contact: true,
+            aadharNumber: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    logger.info('Who referred user retrieved', {
+      userId,
+      userContact:
+        cleanUserContact.substring(0, 4) +
+        '****' +
+        cleanUserContact.substring(8),
+      referredByCount: whoReferredMe.length,
+    });
+
+    return {
+      success: true,
+      whoReferredMe,
+      userInfo: {
+        id: user.id,
+        fullName: user.fullName,
+        contact: user.contact,
+      },
+    };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    logger.error('Error retrieving who referred user', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId,
+    });
+
+    throw new AppError(
+      'Failed to retrieve who referred user',
+      500,
+      'WHO_REFERRED_USER_FETCH_FAILED'
+    );
+  }
+};
+
+/**
+ * Get contacts referred by a user (references that this user has added)
+ */
+export const getReferredContacts = async (userId: string) => {
+  try {
+    // Get user info
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        contact: true,
+        fullName: true,
+      },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+    }
+
+    // Find all references that this user has added (where userId matches)
+    const referredContacts = await prisma.reference.findMany({
+      where: {
+        userId: userId,
+      },
+      select: {
+        id: true,
+        referenceName: true,
+        referenceContact: true,
+        status: true,
+        whatsappSent: true,
+        whatsappSentAt: true,
+        statusUpdatedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            contact: true,
+            aadharNumber: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    logger.info('Referred contacts retrieved', {
+      userId,
+      referredCount: referredContacts.length,
+    });
+
+    return {
+      success: true,
+      referredContacts,
+      userInfo: {
+        id: user.id,
+        fullName: user.fullName,
+        contact: user.contact,
+      },
+    };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    logger.error('Error retrieving referred contacts', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId,
+    });
+
+    throw new AppError(
+      'Failed to retrieve referred contacts',
+      500,
+      'REFERRED_CONTACTS_FETCH_FAILED'
     );
   }
 };

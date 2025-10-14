@@ -5,6 +5,7 @@ import {
   getUserReferences,
   updateReferenceStatus,
   getAllReferencesWithFilters,
+  getReferredContacts as getReferredContactsService,
 } from '../services/referenceService.js';
 import { AppError } from '../middleware/errorHandler.js';
 import logger from '../config/logger.js';
@@ -151,6 +152,60 @@ export const getReferences = async (req: Request, res: Response) => {
       });
     } else {
       logger.error('Unexpected error in getReferences controller', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        userId: req.params.userId,
+        requestId: req.headers['x-request-id'],
+      });
+
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'An unexpected error occurred',
+        },
+      });
+    }
+  }
+};
+
+/**
+ * Get contacts referred by a user (where user appears as reference)
+ * GET /api/references/:userId/referred
+ */
+export const getReferredContacts = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate userId format
+    if (!userId || typeof userId !== 'string') {
+      throw new AppError('Invalid user ID', 400, 'INVALID_USER_ID');
+    }
+
+    // Get referred contacts
+    const result = await getReferredContactsService(userId);
+
+    logger.info('Referred contacts retrieved via API', {
+      userId,
+      referredCount: result.referredContacts.length,
+      requestId: req.headers['x-request-id'],
+    });
+
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+        },
+      });
+    } else {
+      logger.error('Unexpected error in getReferredContacts controller', {
         error: error instanceof Error ? error.message : 'Unknown error',
         userId: req.params.userId,
         requestId: req.headers['x-request-id'],

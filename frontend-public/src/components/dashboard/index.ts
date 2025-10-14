@@ -2,6 +2,7 @@ export { UserDashboard } from './UserDashboard';
 export { UserProfile } from './UserProfile';
 export { DocumentsList } from './DocumentsList';
 export { ReferencesList } from './ReferencesList';
+export { ReferredContactsList } from './ReferredContactsList';
 export { StatusCard } from './StatusCard';
 export { ProfileCard } from './ProfileCard';
 export { ProfileModal } from './ProfileModal';

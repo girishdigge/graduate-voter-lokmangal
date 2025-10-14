@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   addReferences,
   getReferences,
+  getReferredContacts,
   updateReferenceStatusController,
   getAllReferences,
 } from '../controllers/referenceController.js';
@@ -24,6 +25,13 @@ router.post(
 );
 
 router.get('/:userId', authenticateUser, requireOwnership, getReferences);
+
+router.get(
+  '/:userId/referred',
+  authenticateUser,
+  requireOwnership,
+  getReferredContacts
+);
 
 // Admin reference routes (require admin authentication)
 router.get('/admin/all', generalLimiter, authenticateAdmin, getAllReferences);
