@@ -6,7 +6,6 @@ import {
   validateAdminSession,
   logAdminLogout,
   getAdminStats,
-  getVotersWithPagination,
   verifyUser,
   updateUserByAdmin,
 } from '../services/adminService.js';
@@ -667,8 +666,25 @@ export const getVoters = async (
       sort_order,
     };
 
-    // Get voters with pagination
-    const result = await getVotersWithPagination(q, filters, options);
+    // Use search service for consistent data structure and complete field selection
+    const searchResult = await searchService.searchUsers(
+      q || '',
+      filters,
+      options
+    );
+
+    // Transform search result to match expected format
+    const result = {
+      voters: searchResult.data,
+      pagination: {
+        page: searchResult.page,
+        limit: searchResult.limit,
+        total: searchResult.total,
+        totalPages: searchResult.total_pages,
+        hasNext: searchResult.page < searchResult.total_pages,
+        hasPrev: searchResult.page > 1,
+      },
+    };
 
     logger.info('Admin voters list retrieved', {
       adminId,

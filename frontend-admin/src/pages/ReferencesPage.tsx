@@ -6,15 +6,30 @@ import { ReferenceSearchBar } from '../components/references/ReferenceSearchBar'
 import { ReferenceFilterPanel } from '../components/references/ReferenceFilterPanel';
 import { ReferencesTable } from '../components/references/ReferencesTable';
 import { AddReferenceModal } from '../components/references/AddReferenceModal';
-import { Pagination, Button, LoadingSpinner } from '../components/ui';
+import {
+  EnhancedPagination,
+  TableSummary,
+  QuickNavigation,
+  KeyboardShortcuts,
+  ExportModal,
+  Toast,
+  useToast,
+  Button,
+  LoadingSpinner,
+} from '../components/ui';
 import { referenceApi } from '../lib/referenceApi';
 import type {
   ReferenceFilters,
   ReferenceSearchParams,
 } from '../types/reference';
+import { usePaginationKeyboard } from '../hooks/usePaginationKeyboard';
+import { exportReferencesToCSV } from '../lib/csvExport';
+import type { ExportOptions } from '../components/ui/ExportModal';
+import { ExportTest } from '../components/debug/ExportTest';
 
 export const ReferencesPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { toast, showToast, hideToast } = useToast();
 
   // State management
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,8 +41,9 @@ export const ReferencesPage: React.FC = () => {
   const [isAddReferenceModalOpen, setIsAddReferenceModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [selectedUserName, setSelectedUserName] = useState<string>('');
-
-  const itemsPerPage = 20;
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Build search parameters
   const searchParams: ReferenceSearchParams = {
@@ -106,6 +122,11 @@ export const ReferencesPage: React.FC = () => {
     setCurrentPage(page);
   }, []);
 
+  const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing page size
+  }, []);
+
   const handleUpdateReferenceStatus = useCallback(
     async (
       referenceId: string,
@@ -134,6 +155,66 @@ export const ReferencesPage: React.FC = () => {
   const references = referencesData?.data?.references || [];
   const pagination = referencesData?.data?.pagination;
 
+  // Check if filters or search are active
+  const hasActiveFilters = Object.values(filters).some(
+    value => value !== undefined
+  );
+  const hasActiveSearch = searchQuery.trim().length > 0;
+
+  const handleExport = useCallback(
+    async (options: ExportOptions) => {
+      setIsExporting(true);
+      try {
+        let dataToExport = references;
+
+        // If exporting all data, fetch all references
+        if (options.exportType === 'all') {
+          const allReferencesResponse = await referenceApi.getReferences({
+            ...searchParams,
+            page: 1,
+            limit: pagination?.total || 1000, // Get all data
+          });
+          dataToExport = allReferencesResponse.data.references;
+        }
+
+        // Apply date range filter if specified
+        if (options.dateRange) {
+          const startDate = new Date(options.dateRange.start);
+          const endDate = new Date(options.dateRange.end);
+          dataToExport = dataToExport.filter(ref => {
+            const createdDate = new Date(ref.createdAt);
+            return createdDate >= startDate && createdDate <= endDate;
+          });
+        }
+
+        // Export to CSV
+        exportReferencesToCSV(dataToExport, options.customFilename);
+
+        setIsExportModalOpen(false);
+        showToast(
+          `Successfully exported ${dataToExport.length} references to CSV`,
+          'success'
+        );
+      } catch (error) {
+        console.error('Export failed:', error);
+        showToast('Export failed. Please try again.', 'error');
+      } finally {
+        setIsExporting(false);
+      }
+    },
+    [references, searchParams, pagination?.total, referenceApi]
+  );
+
+  // Enable keyboard navigation for pagination
+  usePaginationKeyboard({
+    currentPage,
+    totalPages: pagination?.totalPages || 1,
+    onPageChange: handlePageChange,
+    hasNext: pagination?.hasNext || false,
+    hasPrev: pagination?.hasPrev || false,
+    enabled: !isLoading && !!pagination,
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -148,15 +229,32 @@ export const ReferencesPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="secondary" className="flex items-center gap-2">
+          {/* <KeyboardShortcuts /> */}
+          <Button
+            variant="secondary"
+            className="flex items-center gap-2"
+            onClick={() => setIsExportModalOpen(true)}
+            disabled={!pagination || pagination.total === 0}
+          >
             <Download className="h-4 w-4" />
             Export
           </Button>
-          {pagination && (
-            <div className="text-sm text-gray-600">
-              {pagination.total} total references
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            {pagination && (
+              <div className="text-sm text-gray-600">
+                {pagination.total} total references
+              </div>
+            )}
+            {pagination && pagination.totalPages > 1 && (
+              <QuickNavigation
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                onPageChange={handlePageChange}
+                hasNext={pagination.hasNext}
+                hasPrev={pagination.hasPrev}
+              />
+            )}
+          </div>
         </div>
       </div>
 
@@ -203,6 +301,22 @@ export const ReferencesPage: React.FC = () => {
         </div>
       )}
 
+      {/* Export Test Component - Temporary */}
+      <ExportTest />
+
+      {/* Table Summary */}
+      {pagination && (
+        <TableSummary
+          totalItems={pagination.total}
+          filteredItems={pagination.total}
+          currentPage={pagination.page}
+          itemsPerPage={itemsPerPage}
+          hasActiveFilters={hasActiveFilters}
+          hasActiveSearch={hasActiveSearch}
+          itemType="references"
+        />
+      )}
+
       {/* References Table */}
       {!isLoading || referencesData ? (
         <>
@@ -215,9 +329,9 @@ export const ReferencesPage: React.FC = () => {
             onBulkUpdateStatus={handleBulkUpdateStatus}
           />
 
-          {/* Pagination */}
+          {/* Enhanced Pagination */}
           {pagination && (
-            <Pagination
+            <EnhancedPagination
               currentPage={pagination.page}
               totalPages={pagination.totalPages}
               onPageChange={handlePageChange}
@@ -225,11 +339,35 @@ export const ReferencesPage: React.FC = () => {
               hasPrev={pagination.hasPrev}
               totalItems={pagination.total}
               itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              pageSizeOptions={[10, 20, 50, 100]}
+              showPageSizeSelector={true}
+              showJumpToPage={true}
               className="mt-6"
             />
           )}
         </>
       ) : null}
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExport}
+        totalItems={pagination?.total || 0}
+        filteredItems={pagination?.total || 0}
+        itemType="references"
+        hasActiveFilters={hasActiveFilters}
+        isLoading={isExporting}
+      />
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
     </div>
   );
 };

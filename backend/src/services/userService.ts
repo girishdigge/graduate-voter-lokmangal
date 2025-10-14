@@ -561,8 +561,15 @@ export const getUserById = async (userId: string) => {
         graduationDocType: true,
         isVerified: true,
         verifiedAt: true,
+        verifiedBy: true,
         createdAt: true,
         updatedAt: true,
+        verifiedByAdmin: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
       },
     });
 

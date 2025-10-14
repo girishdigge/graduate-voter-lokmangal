@@ -8,7 +8,17 @@ import { VotersTable } from '../components/voters/VotersTable';
 import { VoterDetailModal } from '../components/voters/VoterDetailModal';
 import { VoterEditModal } from '../components/voters/VoterEditModal';
 import { AddReferenceModal } from '../components/references/AddReferenceModal';
-import { Pagination, Button, LoadingSpinner } from '../components/ui';
+import {
+  EnhancedPagination,
+  TableSummary,
+  QuickNavigation,
+  KeyboardShortcuts,
+  ExportModal,
+  Toast,
+  useToast,
+  Button,
+  LoadingSpinner,
+} from '../components/ui';
 
 import { voterApi } from '../lib/voterApi';
 
@@ -18,9 +28,13 @@ import type {
   VoterSearchParams,
   VoterUpdateData,
 } from '../types/voter';
+import { usePaginationKeyboard } from '../hooks/usePaginationKeyboard';
+import { exportVotersToCSV } from '../lib/csvExport';
+import type { ExportOptions } from '../components/ui/ExportModal';
 
 export const VotersPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { toast, showToast, hideToast } = useToast();
 
   // State management
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,8 +49,9 @@ export const VotersPage: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddReferenceModal, setShowAddReferenceModal] = useState(false);
   const [referenceVoter, setReferenceVoter] = useState<Voter | null>(null);
-
-  const itemsPerPage = 20;
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Build search parameters
   const searchParams: VoterSearchParams = {
@@ -144,6 +159,11 @@ export const VotersPage: React.FC = () => {
     setCurrentPage(page);
   }, []);
 
+  const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing page size
+  }, []);
+
   const handleViewDetails = useCallback((voter: Voter) => {
     console.log('Selected voter data:', voter);
     setSelectedVoter(voter);
@@ -192,6 +212,66 @@ export const VotersPage: React.FC = () => {
   const voters = votersData?.data?.voters || [];
   const pagination = votersData?.data?.pagination;
 
+  // Check if filters or search are active
+  const hasActiveFilters = Object.values(filters).some(
+    value => value !== undefined
+  );
+  const hasActiveSearch = searchQuery.trim().length > 0;
+
+  const handleExport = useCallback(
+    async (options: ExportOptions) => {
+      setIsExporting(true);
+      try {
+        let dataToExport = voters;
+
+        // If exporting all data, fetch all voters
+        if (options.exportType === 'all') {
+          const allVotersResponse = await voterApi.getVoters({
+            ...searchParams,
+            page: 1,
+            limit: pagination?.total || 1000, // Get all data
+          });
+          dataToExport = allVotersResponse.data.voters;
+        }
+
+        // Apply date range filter if specified
+        if (options.dateRange) {
+          const startDate = new Date(options.dateRange.start);
+          const endDate = new Date(options.dateRange.end);
+          dataToExport = dataToExport.filter(voter => {
+            const createdDate = new Date(voter.createdAt);
+            return createdDate >= startDate && createdDate <= endDate;
+          });
+        }
+
+        // Export to CSV
+        exportVotersToCSV(dataToExport, options.customFilename);
+
+        setIsExportModalOpen(false);
+        showToast(
+          `Successfully exported ${dataToExport.length} voters to CSV`,
+          'success'
+        );
+      } catch (error) {
+        console.error('Export failed:', error);
+        showToast('Export failed. Please try again.', 'error');
+      } finally {
+        setIsExporting(false);
+      }
+    },
+    [voters, searchParams, pagination?.total, voterApi]
+  );
+
+  // Enable keyboard navigation for pagination
+  usePaginationKeyboard({
+    currentPage,
+    totalPages: pagination?.totalPages || 1,
+    onPageChange: handlePageChange,
+    hasNext: pagination?.hasNext || false,
+    hasPrev: pagination?.hasPrev || false,
+    enabled: !isLoading && !!pagination,
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -206,15 +286,32 @@ export const VotersPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="secondary" className="flex items-center gap-2">
+          {/* <KeyboardShortcuts /> */}
+          <Button
+            variant="secondary"
+            className="flex items-center gap-2"
+            onClick={() => setIsExportModalOpen(true)}
+            disabled={!pagination || pagination.total === 0}
+          >
             <Download className="h-4 w-4" />
             Export
           </Button>
-          {pagination && (
-            <div className="text-sm text-gray-600">
-              {pagination.total} total voters
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            {pagination && (
+              <div className="text-sm text-gray-600">
+                {pagination.total} total voters
+              </div>
+            )}
+            {pagination && pagination.totalPages > 1 && (
+              <QuickNavigation
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                onPageChange={handlePageChange}
+                hasNext={pagination.hasNext}
+                hasPrev={pagination.hasPrev}
+              />
+            )}
+          </div>
         </div>
       </div>
 
@@ -261,6 +358,19 @@ export const VotersPage: React.FC = () => {
         </div>
       )}
 
+      {/* Table Summary */}
+      {pagination && (
+        <TableSummary
+          totalItems={pagination.total}
+          filteredItems={pagination.total}
+          currentPage={pagination.page}
+          itemsPerPage={itemsPerPage}
+          hasActiveFilters={hasActiveFilters}
+          hasActiveSearch={hasActiveSearch}
+          itemType="voters"
+        />
+      )}
+
       {/* Voters Table */}
       {!isLoading || votersData ? (
         <>
@@ -275,9 +385,9 @@ export const VotersPage: React.FC = () => {
             onAddReferences={handleAddReferences}
           />
 
-          {/* Pagination */}
+          {/* Enhanced Pagination */}
           {pagination && (
-            <Pagination
+            <EnhancedPagination
               currentPage={pagination.page}
               totalPages={pagination.totalPages}
               onPageChange={handlePageChange}
@@ -285,6 +395,10 @@ export const VotersPage: React.FC = () => {
               hasPrev={pagination.hasPrev}
               totalItems={pagination.total}
               itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              pageSizeOptions={[10, 20, 50, 100]}
+              showPageSizeSelector={true}
+              showJumpToPage={true}
               className="mt-6"
             />
           )}
@@ -322,6 +436,26 @@ export const VotersPage: React.FC = () => {
           userName={referenceVoter.fullName}
         />
       )}
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExport}
+        totalItems={pagination?.total || 0}
+        filteredItems={pagination?.total || 0}
+        itemType="voters"
+        hasActiveFilters={hasActiveFilters}
+        isLoading={isExporting}
+      />
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
     </div>
   );
 };

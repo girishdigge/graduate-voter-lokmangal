@@ -182,8 +182,15 @@ class SearchService {
             street: true,
             area: true,
             graduationDocType: true,
-
             disabilities: true,
+            university: true,
+            isRegisteredElector: true,
+            verifiedByAdmin: {
+              select: {
+                id: true,
+                fullName: true,
+              },
+            },
           },
         }),
         prisma.user.count({ where }),
