@@ -73,13 +73,6 @@ export const ReferenceFilterPanel: React.FC<ReferenceFilterPanelProps> = ({
             className="w-full"
           />
         </div>
-
-        {/* Placeholder for additional filters */}
-        <div className="md:col-span-1 lg:col-span-3">
-          <div className="text-sm text-gray-500 italic">
-            Additional filters can be added here as needed
-          </div>
-        </div>
       </div>
 
       {hasActiveFilters && (

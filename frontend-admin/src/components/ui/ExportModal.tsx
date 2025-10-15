@@ -4,7 +4,6 @@ import { Button } from './Button';
 import { Modal } from './Modal';
 import { Checkbox } from './Checkbox';
 import { Input } from './Input';
-import { ExportInstructions } from './ExportInstructions';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -247,9 +246,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </div>
           )}
         </div>
-
-        {/* Export Instructions */}
-        <ExportInstructions />
 
         {/* Action Buttons */}
         <div className="flex justify-end space-x-3 pt-4 border-t">

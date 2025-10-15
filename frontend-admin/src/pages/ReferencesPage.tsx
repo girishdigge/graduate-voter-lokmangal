@@ -25,7 +25,6 @@ import type {
 import { usePaginationKeyboard } from '../hooks/usePaginationKeyboard';
 import { exportReferencesToCSV } from '../lib/csvExport';
 import type { ExportOptions } from '../components/ui/ExportModal';
-import { ExportTest } from '../components/debug/ExportTest';
 
 export const ReferencesPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -300,9 +299,6 @@ export const ReferencesPage: React.FC = () => {
           <LoadingSpinner size="lg" />
         </div>
       )}
-
-      {/* Export Test Component - Temporary */}
-      <ExportTest />
 
       {/* Table Summary */}
       {pagination && (

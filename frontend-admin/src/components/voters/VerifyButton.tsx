@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, X, AlertCircle } from 'lucide-react';
 import { Button } from '../ui';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface VerifyButtonProps {
   isVerified: boolean;
@@ -15,10 +16,20 @@ export const VerifyButton: React.FC<VerifyButtonProps> = ({
   disabled = false,
   size = 'sm',
 }) => {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Only admin users can unverify voters
+
+  const canUnverify = user?.role === 'admin' || 'ADMIN';
+
   const handleClick = async () => {
+    // Prevent unverify action for non-admin users
+    if (isVerified && !canUnverify) {
+      return;
+    }
+
     if (showConfirm) {
       setIsLoading(true);
       try {
@@ -64,6 +75,16 @@ export const VerifyButton: React.FC<VerifyButtonProps> = ({
           <X className="h-4 w-4" />
           No
         </Button>
+      </div>
+    );
+  }
+
+  // If voter is verified but user is not admin, show a disabled state or just verified status
+  if (isVerified && !canUnverify) {
+    return (
+      <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
+        <Check className="h-4 w-4" />
+        Verified
       </div>
     );
   }
