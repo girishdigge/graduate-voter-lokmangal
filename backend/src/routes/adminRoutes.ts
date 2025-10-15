@@ -16,6 +16,8 @@ import {
   getReferences,
   updateReferenceStatusController,
 } from '../controllers/adminController.js';
+import { getUserDocumentsController } from '../controllers/userController.js';
+import { getUserDocument } from '../controllers/documentController.js';
 import { authenticateAdmin } from '../middleware/auth.js';
 
 const router = Router();
@@ -177,6 +179,32 @@ router.get('/voters', authenticateAdmin, getVoters);
  * @params  userId: string (UUID)
  */
 router.get('/voters/:userId', authenticateAdmin, getVoterDetails);
+
+/**
+ * @route   GET /api/admin/voters/:userId/documents
+ * @desc    Get all documents for a voter (admin access)
+ * @access  Private (Admin)
+ * @headers Authorization: Bearer <token>
+ * @params  userId: string (UUID)
+ */
+router.get(
+  '/voters/:userId/documents',
+  authenticateAdmin,
+  getUserDocumentsController
+);
+
+/**
+ * @route   GET /api/admin/voters/:userId/documents/:documentType
+ * @desc    Get a specific document for a voter (admin access)
+ * @access  Private (Admin)
+ * @headers Authorization: Bearer <token>
+ * @params  userId: string (UUID), documentType: string
+ */
+router.get(
+  '/voters/:userId/documents/:documentType',
+  authenticateAdmin,
+  getUserDocument
+);
 
 /**
  * @route   PUT /api/admin/voters/:userId/verify

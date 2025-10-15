@@ -1,8 +1,19 @@
+// Load environment variables FIRST, before any other imports
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get the directory of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env file from the backend directory (one level up from src)
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+
 import express from 'express';
 import cors from 'cors';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
 
 // Import configuration and middleware
 import logger from './config/logger.js';
@@ -21,9 +32,6 @@ import {
 import { getCorsConfig, corsSecurityMonitoring } from './config/cors.js';
 import { sanitizeAllInputs } from './utils/sanitization.js';
 import { setCSRFToken } from './middleware/csrfProtection.js';
-
-// Load environment variables
-dotenv.config();
 
 // Validate environment configuration
 import { validateEnvironment } from './config/env.js';
@@ -170,6 +178,8 @@ import userRoutes from './routes/userRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
 import referenceRoutes from './routes/referenceRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import debugRoutes from './routes/debugRoutes.js';
+import testRoutes from './routes/testRoutes.js';
 
 // Import CSRF protection middleware
 import { conditionalCSRFProtection } from './middleware/csrfProtection.js';
@@ -180,6 +190,12 @@ app.use('/api/users', conditionalCSRFProtection, userRoutes); // CSRF for authen
 app.use('/api/documents', conditionalCSRFProtection, documentRoutes); // CSRF for authenticated users
 app.use('/api/references', conditionalCSRFProtection, referenceRoutes); // CSRF for authenticated users
 app.use('/api/admin', conditionalCSRFProtection, adminRoutes); // CSRF for authenticated admins
+app.use('/api/debug', debugRoutes); // Debug routes (remove in production)
+
+// Test routes (only for development - remove in production)
+if (process.env.NODE_ENV === 'development') {
+  app.use('/api/test', testRoutes);
+}
 
 // 404 handler (must be after all routes)
 app.use(notFoundHandler);

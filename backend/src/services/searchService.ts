@@ -315,7 +315,7 @@ class SearchService {
       ]);
 
       // Keep the user data nested as expected by frontend
-      const transformedData = data.map(reference => ({
+      const transformedData = data.map((reference: any) => ({
         ...reference,
         user: {
           id: reference.userId,
@@ -405,7 +405,7 @@ class SearchService {
         distinct: ['fullName'],
       });
 
-      return users.map(user => user.fullName);
+      return users.map((user: any) => user.fullName);
     } catch (error) {
       logger.error('Failed to get user name suggestions', {
         query,

@@ -1,16 +1,23 @@
 import React, { useState } from 'react';
-import { Settings, Users, Lock, Shield } from 'lucide-react';
+import { Settings, Users, Lock, Shield, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { ManagersTable, PasswordChangeForm } from '../components/settings';
+import {
+  ManagersTable,
+  PasswordChangeForm,
+  ProfileForm,
+} from '../components/settings';
 
-type SettingsTab = 'password' | 'managers';
+type SettingsTab = 'profile' | 'password' | 'managers';
 
 export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<SettingsTab>('password');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
 
   // This page should only be accessible to admins and managers
-  if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
+  const isAdmin = user?.role === 'admin' || user?.role === 'ADMIN';
+  const isManager = user?.role === 'manager' || user?.role === 'MANAGER';
+
+  if (!user || (!isAdmin && !isManager)) {
     return (
       <div className="text-center py-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
@@ -23,18 +30,25 @@ export const SettingsPage: React.FC = () => {
 
   const tabs = [
     {
+      id: 'profile' as SettingsTab,
+      name: 'Profile',
+      icon: Users,
+      description: 'Manage your account information',
+      roles: ['admin', 'manager', 'ADMIN', 'MANAGER'],
+    },
+    {
       id: 'password' as SettingsTab,
       name: 'Password',
       icon: Lock,
       description: 'Change your account password',
-      roles: ['admin', 'manager'],
+      roles: ['admin', 'manager', 'ADMIN', 'MANAGER'],
     },
     {
       id: 'managers' as SettingsTab,
       name: 'User Management',
       icon: Users,
       description: 'Manage administrator and manager accounts',
-      roles: ['admin'], // Only admins can manage users
+      roles: ['admin', 'ADMIN'], // Only admins can manage users
     },
   ];
 
@@ -73,14 +87,11 @@ export const SettingsPage: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`
-                  flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors
-                  ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }
-                `}
+                className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
               >
                 <Icon className="h-4 w-4" />
                 {tab.name}
@@ -92,6 +103,20 @@ export const SettingsPage: React.FC = () => {
 
       {/* Tab Content */}
       <div className="space-y-6">
+        {activeTab === 'profile' && (
+          <div>
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Profile Settings
+              </h2>
+              <p className="text-sm text-gray-600">
+                Manage your account information and personal details
+              </p>
+            </div>
+            <ProfileForm />
+          </div>
+        )}
+
         {activeTab === 'password' && (
           <div>
             <div className="mb-6">
@@ -106,7 +131,7 @@ export const SettingsPage: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'managers' && user.role === 'admin' && (
+        {activeTab === 'managers' && isAdmin && (
           <div>
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-900">

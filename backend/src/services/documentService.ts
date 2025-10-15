@@ -83,7 +83,7 @@ export const uploadDocument = async (
     });
 
     // Save document metadata to database
-    const document = await prisma.$transaction(async tx => {
+    const document = await prisma.$transaction(async (tx: any) => {
       // If replacing existing document, mark old one as inactive
       if (existingDocument) {
         await tx.document.update({
@@ -311,7 +311,7 @@ export const getUserDocuments = async (userId: string) => {
 
     // Generate signed URLs for all documents
     const documentsWithUrls = await Promise.all(
-      documents.map(async document => {
+      documents.map(async (document: any) => {
         try {
           const signedUrl = await generateSignedUrl(document.s3Key);
           return {
@@ -526,7 +526,7 @@ export const getDocumentStats = async () => {
     });
 
     const documentsByType = stats.reduce(
-      (acc, stat) => {
+      (acc: any, stat: any) => {
         acc[stat.documentType] = stat._count.id;
         return acc;
       },

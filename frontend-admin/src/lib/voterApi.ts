@@ -52,4 +52,12 @@ export const voterApi = {
     const response = await api.get('/admin/search/voters', { params });
     return response.data;
   },
+
+  // Get user documents (admin access)
+  getUserDocuments: async (
+    userId: string
+  ): Promise<{ data: { documents: any[]; count: number } }> => {
+    const response = await api.get(`/admin/voters/${userId}/documents`);
+    return response.data;
+  },
 };

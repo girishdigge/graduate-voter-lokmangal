@@ -1,16 +1,16 @@
 @import 'tailwindcss';
 
-/* Custom theme configuration */
+/* Custom theme configuration using Tailwind v4 syntax */
 @theme {
-  --tw-color-primary: #ef7722;
-  --tw-color-secondary: #334155;
+  --color-primary: #ef7722;
+  --color-secondary: #334155;
   --animate-scale-pop: scale-pop 2s ease-in-out infinite;
 }
 @layer components {
   /* Define a custom class that forces the background color */
   .btn-custom-bg {
     /* Use !important to override the component's internal style */
-    background-color: var(--tw-color-primary) !important;
+    background-color: var(--color-primary) !important;
   }
 }
 

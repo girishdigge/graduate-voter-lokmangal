@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Bell } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface HeaderProps {
@@ -29,13 +29,6 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
         <div className="flex items-center space-x-4">
           {/* Notifications */}
-          <button className="text-gray-400 hover:text-gray-500 relative">
-            <Bell className="h-6 w-6" />
-            {/* Notification badge - can be conditionally shown */}
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center">
-              <span className="text-xs text-white font-medium">3</span>
-            </span>
-          </button>
 
           {/* User info */}
           <div className="flex items-center">

@@ -9,19 +9,48 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token and CSRF token
 api.interceptors.request.use(
   config => {
     const token = localStorage.getItem('userToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Add CSRF token from cookie for state-changing requests
+    if (
+      ['POST', 'PUT', 'DELETE', 'PATCH'].includes(
+        config.method?.toUpperCase() || ''
+      )
+    ) {
+      const csrfToken = getCookie('csrf-token');
+      if (csrfToken) {
+        config.headers['x-csrf-token'] = csrfToken;
+      }
+    }
+
+    // For FormData requests, remove the default Content-Type header
+    // to let the browser set it with the correct boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     return config;
   },
   error => {
     return Promise.reject(error);
   }
 );
+
+// Helper function to get cookie value
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(';').shift() || null;
+  }
+  return null;
+}
 
 // Response interceptor for error handling
 api.interceptors.response.use(
@@ -58,6 +87,9 @@ api.interceptors.response.use(
 
 // API endpoints
 export const apiEndpoints = {
+  // CSRF token
+  initializeCSRF: () => api.get('/health'), // This endpoint sets the CSRF cookie
+
   // Aadhar check
   checkAadhar: (aadharNumber: string) =>
     api.post('/aadhar/check', { aadharNumber }),
@@ -79,12 +111,10 @@ export const apiEndpoints = {
   uploadDocument: (userId: string, documentType: string, file: File) => {
     const formData = new FormData();
     formData.append('document', file);
-    return api.post(`/documents/${userId}/upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      params: { documentType },
-    });
+    formData.append('documentType', documentType); // Add documentType as form field
+
+    // The request interceptor will automatically handle Content-Type for FormData
+    return api.post(`/documents/${userId}/upload`, formData);
   },
 
   getAllUserDocuments: (userId: string) => api.get(`/documents/${userId}`),

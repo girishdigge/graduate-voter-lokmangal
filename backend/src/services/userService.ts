@@ -224,7 +224,7 @@ export const createUserEnrollment = async (
     // }
 
     // Create user in database transaction
-    const newUser = await prisma.$transaction(async tx => {
+    const newUser = await prisma.$transaction(async (tx: any) => {
       // Create the user
       const user = await tx.user.create({
         data: userData,

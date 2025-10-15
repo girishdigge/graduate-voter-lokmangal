@@ -7,12 +7,30 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { AppError } from '../middleware/errorHandler.js';
 import logger from './logger.js';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Ensure environment variables are loaded
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 
 // AWS S3 Configuration
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
 const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;
+
+// Debug logging for environment variables
+console.log('🔍 AWS Config Debug:', {
+  AWS_REGION,
+  AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID
+    ? `${AWS_ACCESS_KEY_ID.substring(0, 4)}...`
+    : 'undefined',
+  AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY ? 'set' : 'undefined',
+  S3_BUCKET_NAME,
+});
 
 // Validate required environment variables
 if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {

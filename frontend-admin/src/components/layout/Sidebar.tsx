@@ -19,7 +19,7 @@ interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  roles?: ('admin' | 'manager')[];
+  roles?: ('admin' | 'manager' | 'ADMIN' | 'MANAGER')[];
 }
 
 const navigation: NavItem[] = [
@@ -42,7 +42,7 @@ const navigation: NavItem[] = [
     name: 'Settings',
     href: '/settings',
     icon: Settings,
-    roles: ['admin'], // Only admins can access settings
+    roles: ['admin', 'manager', 'ADMIN', 'MANAGER'], // Both admins and managers can access settings
   },
 ];
 

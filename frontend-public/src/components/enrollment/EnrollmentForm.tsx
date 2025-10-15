@@ -31,7 +31,7 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({
     clearErrors,
     formState: { errors, isValid },
   } = useForm<EnrollmentFormData>({
-    resolver: zodResolver(enrollmentFormSchema),
+    resolver: zodResolver(enrollmentFormSchema) as any,
     defaultValues: {
       address: {
         city: 'Pune',
@@ -185,7 +185,7 @@ const EnrollmentForm: React.FC<EnrollmentFormProps> = ({
       </div>
 
       {/* Form Content */}
-      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-8">
+      <form onSubmit={handleSubmit(onFormSubmit as any)} className="space-y-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           {sections[currentSection].component}
         </div>

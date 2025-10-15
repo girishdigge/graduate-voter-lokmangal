@@ -628,7 +628,7 @@ export const getAllReferencesWithFilters = async (
 ) => {
   try {
     // Build where clause
-    const where: Prisma.ReferenceWhereInput = {};
+    const where: any = {};
 
     if (status && Object.values(ReferenceStatus).includes(status)) {
       where.status = status;

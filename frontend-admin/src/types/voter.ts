@@ -57,6 +57,7 @@ export interface VoterDocument {
   fileSize: number;
   mimeType: string;
   uploadedAt: string;
+  downloadUrl?: string;
 }
 
 export interface VoterReference {

@@ -24,7 +24,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       if (value === '' || value === undefined) {
         delete newFilters[key];
       } else {
-        newFilters[key] = value as any;
+        (newFilters as any)[key] = value;
       }
       onFiltersChange(newFilters);
     },

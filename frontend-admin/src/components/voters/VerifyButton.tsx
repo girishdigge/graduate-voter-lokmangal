@@ -21,8 +21,7 @@ export const VerifyButton: React.FC<VerifyButtonProps> = ({
   const [showConfirm, setShowConfirm] = useState(false);
 
   // Only admin users can unverify voters
-
-  const canUnverify = user?.role === 'admin' || 'ADMIN';
+  const canUnverify = user?.role === 'admin' || user?.role === 'ADMIN';
 
   const handleClick = async () => {
     // Prevent unverify action for non-admin users

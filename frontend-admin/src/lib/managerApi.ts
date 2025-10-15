@@ -135,3 +135,20 @@ export const changePassword = async (
     );
   }
 };
+
+/**
+ * Update current user's profile
+ */
+export const updateProfile = async (profileData: {
+  username: string;
+  email: string;
+  fullName: string;
+}): Promise<{ success: boolean; data?: any; error?: any }> => {
+  const response = await api.put('/admin/profile', profileData);
+
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to update profile');
+  }
+
+  return response.data;
+};

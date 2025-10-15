@@ -1,9 +1,9 @@
-import React, { useState, useEffect, type ReactNode } from 'react';
+import React, { useState, useEffect } from 'react';
 import { apiEndpoints } from '../lib/api';
 import { AuthContext, type User, type AuthContextType } from './auth-context';
 
 interface AuthProviderProps {
-  children: ReactNode;
+  children: any;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {

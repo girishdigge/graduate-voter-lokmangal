@@ -5,10 +5,9 @@ import {
   Plus,
   Upload,
   Smartphone,
-  Share,
+  Share2,
   HelpCircle,
   FileText,
-  Share2,
   X,
 } from 'lucide-react';
 import { ManualReferenceModal } from './ManualReferenceModal';
@@ -335,7 +334,7 @@ export const ContactPicker: React.FC<ContactPickerProps> = ({
                 variant="primary"
                 className="flex flex-col items-center p-6 h-auto"
               >
-                <Share className="h-8 w-8 mb-2" />
+                <Share2 className="h-8 w-8 mb-2" />
                 <span className="font-medium">Share Contacts</span>
                 <span className="text-xs opacity-80 mt-1">
                   Use device sharing

@@ -32,13 +32,13 @@ interface DocumentsCardProps {
 
 const DOCUMENT_TYPES = [
   {
-    type: 'AADHAR_CARD',
+    type: 'AADHAR',
     label: 'Aadhar Card',
     description: 'Government issued Aadhar card',
     required: true,
   },
   {
-    type: 'PASSPORT_PHOTO',
+    type: 'PHOTO',
     label: 'Passport Photo',
     description: 'Recent passport size photograph',
     required: true,
@@ -59,6 +59,8 @@ export const DocumentsCard: React.FC<DocumentsCardProps> = ({ userId }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Initialize CSRF token
+    apiEndpoints.initializeCSRF().catch(console.error);
     loadDocuments();
   }, [userId]);
 
@@ -88,6 +90,8 @@ export const DocumentsCard: React.FC<DocumentsCardProps> = ({ userId }) => {
 
   const handleFileUpload = async (documentType: string, file: File) => {
     try {
+      console.log('documentType:', documentType, 'file:', file);
+
       setUploadingType(documentType);
       setError(null);
 
@@ -103,6 +107,9 @@ export const DocumentsCard: React.FC<DocumentsCardProps> = ({ userId }) => {
       }
     } catch (error: any) {
       console.error('Upload failed:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error headers:', error.response?.headers);
       setError(
         error.response?.data?.error?.message ||
           'Failed to upload document. Please try again.'
@@ -159,37 +166,58 @@ export const DocumentsCard: React.FC<DocumentsCardProps> = ({ userId }) => {
 
   const handleDownload = async (document: Document) => {
     try {
+      // Get the signed URL from the API
       const response = await apiEndpoints.getDocument(
         userId,
         document.documentType
       );
-      const blob = new Blob([response.data]);
-      const url = window.URL.createObjectURL(blob);
+
+      // The API returns { success: true, data: { document: { downloadUrl: "..." } } }
+      const downloadUrl = response.data.data?.document?.downloadUrl;
+
+      if (!downloadUrl) {
+        throw new Error('Download URL not found in response');
+      }
+
+      // Use the signed URL directly for download (avoids CORS issues)
       const a = window.document.createElement('a');
-      a.href = url;
+      a.href = downloadUrl;
       a.download = document.fileName;
+      a.target = '_blank'; // Open in new tab as fallback
       a.click();
-      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download failed:', error);
-      alert('Failed to download document');
+      alert('Failed to download document. Please try again.');
     }
   };
 
   const handlePrint = async (document: Document) => {
     try {
+      // Get the signed URL from the API
       const response = await apiEndpoints.getDocument(
         userId,
         document.documentType
       );
-      const blob = new Blob([response.data]);
-      const url = window.URL.createObjectURL(blob);
-      const printWindow = window.open(url);
-      printWindow?.print();
-      window.URL.revokeObjectURL(url);
+
+      // The API returns { success: true, data: { document: { downloadUrl: "..." } } }
+      const downloadUrl = response.data.data?.document?.downloadUrl;
+
+      if (!downloadUrl) {
+        throw new Error('Download URL not found in response');
+      }
+
+      // Open the signed URL in a new window for printing
+      const printWindow = window.open(downloadUrl, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      } else {
+        alert('Please allow pop-ups to print documents');
+      }
     } catch (error) {
       console.error('Print failed:', error);
-      alert('Failed to print document');
+      alert('Failed to print document. Please try again.');
     }
   };
 

@@ -24,6 +24,17 @@ export const uploadUserDocument = async (
     const { userId } = req.params;
     const { documentType } = req.body;
 
+    // Debug logging to see what's being received
+    logger.debug('Upload request debug info', {
+      userId,
+      documentType,
+      bodyKeys: Object.keys(req.body || {}),
+      body: req.body,
+      hasFile: !!req.file,
+      fileName: req.file?.originalname,
+      contentType: req.get('Content-Type'),
+    });
+
     // Validate required parameters
     if (!userId) {
       throw new AppError('User ID is required', 400, 'MISSING_USER_ID');
@@ -45,27 +56,24 @@ export const uploadUserDocument = async (
       throw new AppError('No file uploaded', 400, 'NO_FILE_UPLOADED');
     }
 
+    const file = req.file;
+
     logger.info('Document upload request received', {
       userId,
       documentType: validDocumentType,
-      fileName: req.file.originalname,
-      fileSize: req.file.size,
-      mimeType: req.file.mimetype,
+      fileName: file.originalname,
+      fileSize: file.size,
+      mimeType: file.mimetype,
     });
 
     // Upload document
-    const result = await uploadDocument(
-      userId,
-      validDocumentType,
-      req.file,
-      req
-    );
+    const result = await uploadDocument(userId, validDocumentType, file, req);
 
     logger.info('Document upload completed successfully', {
       userId,
       documentType: validDocumentType,
       documentId: result.document.id,
-      fileName: req.file.originalname,
+      fileName: file.originalname,
     });
 
     res.status(201).json({
@@ -78,7 +86,7 @@ export const uploadUserDocument = async (
       error: error instanceof Error ? error.message : 'Unknown error',
       userId: req.params.userId,
       documentType: req.body.documentType,
-      fileName: req.file?.originalname,
+      fileName: (req.file as Express.Multer.File)?.originalname,
     });
     next(error);
   }
@@ -218,27 +226,24 @@ export const replaceUserDocument = async (
       throw new AppError('No file uploaded', 400, 'NO_FILE_UPLOADED');
     }
 
+    const file = req.file;
+
     logger.info('Document replacement request received', {
       userId,
       documentType: validDocumentType,
-      fileName: req.file.originalname,
-      fileSize: req.file.size,
-      mimeType: req.file.mimetype,
+      fileName: file.originalname,
+      fileSize: file.size,
+      mimeType: file.mimetype,
     });
 
     // Replace document (this is the same as upload since upload handles replacement)
-    const result = await replaceDocument(
-      userId,
-      validDocumentType,
-      req.file,
-      req
-    );
+    const result = await replaceDocument(userId, validDocumentType, file, req);
 
     logger.info('Document replacement completed successfully', {
       userId,
       documentType: validDocumentType,
       documentId: result.document.id,
-      fileName: req.file.originalname,
+      fileName: file.originalname,
     });
 
     res.status(200).json({
@@ -251,7 +256,7 @@ export const replaceUserDocument = async (
       error: error instanceof Error ? error.message : 'Unknown error',
       userId: req.params.userId,
       documentType: req.params.documentType,
-      fileName: req.file?.originalname,
+      fileName: (req.file as Express.Multer.File)?.originalname,
     });
     next(error);
   }

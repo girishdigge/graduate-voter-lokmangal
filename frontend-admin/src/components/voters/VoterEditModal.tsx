@@ -55,7 +55,7 @@ export const VoterEditModal: React.FC<VoterEditModalProps> = ({
     reset,
     formState: { errors },
   } = useForm<VoterUpdateData>({
-    resolver: zodResolver(voterUpdateSchema),
+    resolver: zodResolver(voterUpdateSchema) as any,
   });
 
   const disabilityOptions = [
@@ -144,9 +144,9 @@ export const VoterEditModal: React.FC<VoterEditModalProps> = ({
       // Clean up empty strings and convert them to undefined
       const cleanData = Object.entries(data).reduce((acc, [key, value]) => {
         if (value === '') {
-          acc[key as keyof VoterUpdateData] = undefined;
+          (acc as any)[key] = undefined;
         } else {
-          acc[key as keyof VoterUpdateData] = value;
+          (acc as any)[key] = value;
         }
         return acc;
       }, {} as VoterUpdateData);

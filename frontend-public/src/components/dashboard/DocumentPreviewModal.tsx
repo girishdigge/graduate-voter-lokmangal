@@ -39,27 +39,32 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
 
   useEffect(() => {
     loadDocumentPreview();
-    return () => {
-      if (documentUrl) {
-        URL.revokeObjectURL(documentUrl);
-      }
-    };
+    // No cleanup needed since we're using signed URLs directly
   }, [document.id]);
 
   const loadDocumentPreview = async () => {
     try {
       setIsLoading(true);
       setError(null);
+
+      // Get the signed URL from the API
       const response = await apiEndpoints.getDocument(
         userId,
         document.documentType
       );
-      const blob = new Blob([response.data], { type: document.mimeType });
-      const url = URL.createObjectURL(blob);
-      setDocumentUrl(url);
+
+      // The API returns { success: true, data: { document: { downloadUrl: "..." } } }
+      const downloadUrl = response.data.data?.document?.downloadUrl;
+
+      if (!downloadUrl) {
+        throw new Error('Download URL not found in response');
+      }
+
+      // Use the signed URL directly for preview
+      setDocumentUrl(downloadUrl);
     } catch (error) {
       console.error('Failed to load document preview:', error);
-      setError('Failed to load document preview');
+      setError('Failed to load document preview. Please try again.');
     } finally {
       setIsLoading(false);
     }

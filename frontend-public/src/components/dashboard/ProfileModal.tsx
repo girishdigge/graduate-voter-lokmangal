@@ -909,7 +909,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 </label>
                 <p className="text-gray-900">
                   {userData.aadharNumber
-                    ? `${userData.aadharNumber.substring(0, 4)}****${userData.aadharNumber.substring(8)}`
+                    ? `${userData.aadharNumber}`
                     : 'Not provided'}
                 </p>
               </div>

@@ -114,6 +114,7 @@ export const s3Upload = multer({
 
 /**
  * Single file upload middleware for memory storage
+ * Using single() for single file uploads - this should properly handle text fields
  */
 export const uploadSingleFile = memoryUpload.single('document');
 
@@ -231,12 +232,12 @@ export const validateUploadedFiles = (req: Request, res: any, next: any) => {
       });
     }
 
-    // Validate single file
+    // Validate single file (legacy support)
     if (req.file) {
       validateFileForUpload(req.file);
     }
 
-    // Validate multiple files
+    // Validate multiple files (including single file uploaded via fields())
     if (req.files) {
       const files = Array.isArray(req.files)
         ? req.files

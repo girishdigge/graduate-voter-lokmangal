@@ -7,7 +7,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   helperText?: string;
 }
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
+const Input = React.forwardRef(
   ({ className, type = 'text', label, error, helperText, ...props }, ref) => {
     return (
       <div className="space-y-2">

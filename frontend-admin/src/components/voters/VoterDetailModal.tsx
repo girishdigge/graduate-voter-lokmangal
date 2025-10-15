@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Calendar,
   MapPin,
   User,
   Phone,
@@ -11,10 +10,12 @@ import {
   Vote,
   Shield,
   Edit,
+  Download,
 } from 'lucide-react';
 import { Modal, Badge, LoadingSpinner, Button } from '../ui';
 import { VerifyButton } from './VerifyButton';
-import type { Voter } from '../../types/voter';
+import { voterApi } from '../../lib/voterApi';
+import type { Voter, VoterDocument } from '../../types/voter';
 
 interface VoterDetailModalProps {
   isOpen: boolean;
@@ -33,13 +34,40 @@ export const VoterDetailModal: React.FC<VoterDetailModalProps> = ({
   onVerify,
   onEdit,
 }) => {
-  console.log('VoterDetailModal received voter data:', voter);
-  if (!voter && !isLoading) return null;
+  // All hooks must be at the top, before any conditional logic
+  const [documents, setDocuments] = useState<VoterDocument[]>([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+
+  // Temporarily disable automatic document fetching to prevent logout issue
+  // TODO: Fix authentication issue with document API
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset state when modal closes
+      setDocuments([]);
+      setDocumentsLoading(false);
+    }
+  }, [isOpen]);
 
   const handleVerify = async (isVerified: boolean) => {
     if (voter) {
       await onVerify(voter.id, isVerified);
     }
+  };
+
+  const handleDownloadDocument = (downloadUrl: string, fileName: string) => {
+    if (!downloadUrl) {
+      alert('Download URL not available for this document.');
+      return;
+    }
+
+    // Create download link using the signed URL
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName;
+    link.target = '_blank'; // Open in new tab as fallback
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const formatDate = (dateString: string) => {
@@ -76,10 +104,27 @@ export const VoterDetailModal: React.FC<VoterDetailModalProps> = ({
     }
   };
 
-  const maskAadhar = (aadhar: string) => {
-    if (!aadhar || aadhar.length < 8) return aadhar;
-    return aadhar.slice(0, 4) + '****' + aadhar.slice(-4);
+  const formatDocumentType = (documentType: string) => {
+    const typeLabels = {
+      AADHAR: 'Aadhar Card',
+      DEGREE_CERTIFICATE: 'Degree Certificate',
+      PHOTO: 'Photo',
+    };
+    return (
+      typeLabels[documentType as keyof typeof typeLabels] ||
+      documentType.replace('_', ' ')
+    );
   };
+
+  // Conditional logic after all hooks
+  console.log('VoterDetailModal received voter data:', voter);
+  console.log('VoterDetailModal isLoading:', isLoading);
+
+  // Don't render if modal is not open
+  if (!isOpen) return null;
+
+  // Don't render if no voter data and not loading
+  if (!voter && !isLoading) return null;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Profile Details" size="xl">
@@ -87,13 +132,13 @@ export const VoterDetailModal: React.FC<VoterDetailModalProps> = ({
         <div className="flex justify-center py-8">
           <LoadingSpinner size="lg" />
         </div>
-      ) : voter ? (
+      ) : voter && voter.id ? (
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
-                {voter.fullName}
+                {voter.fullName || 'Loading...'}
               </h2>
               <p className="text-sm text-gray-600">
                 Complete profile information
@@ -371,7 +416,7 @@ export const VoterDetailModal: React.FC<VoterDetailModalProps> = ({
                     Aadhar Number
                   </label>
                   <p className="text-gray-900 font-mono">
-                    {maskAadhar(voter.aadharNumber)}
+                    {voter.aadharNumber}
                   </p>
                 </div>
                 <div>
@@ -451,9 +496,116 @@ export const VoterDetailModal: React.FC<VoterDetailModalProps> = ({
                 </div>
               </div>
             )}
+
+            {/* Documents */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <FileText className="h-5 w-5 text-gray-400 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Uploaded Documents
+                  </h3>
+                </div>
+                <Button
+                  onClick={async () => {
+                    if (!voter?.id) return;
+                    setDocumentsLoading(true);
+                    try {
+                      const response = await voterApi.getUserDocuments(
+                        voter.id
+                      );
+                      setDocuments(response.data.documents || []);
+                    } catch (error) {
+                      console.error('Error fetching documents:', error);
+                      alert(
+                        'Failed to load documents. Please check your permissions.'
+                      );
+                      setDocuments([]);
+                    } finally {
+                      setDocumentsLoading(false);
+                    }
+                  }}
+                  variant="secondary"
+                  size="sm"
+                  disabled={documentsLoading}
+                  className="flex items-center gap-1"
+                >
+                  {documentsLoading ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    <FileText className="h-4 w-4" />
+                  )}
+                  Load Documents
+                </Button>
+              </div>
+              {documentsLoading ? (
+                <div className="flex justify-center py-4">
+                  <LoadingSpinner size="sm" />
+                </div>
+              ) : documents.length > 0 ? (
+                <div className="space-y-3">
+                  {documents.map(document => (
+                    <div
+                      key={document.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                          <FileText className="h-8 w-8 text-gray-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {formatDocumentType(document.documentType)}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {document.fileName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(document.fileSize / 1024).toFixed(1)} KB •
+                            Uploaded{' '}
+                            {new Date(document.uploadedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="info" size="sm">
+                          {document.mimeType.split('/')[1].toUpperCase()}
+                        </Badge>
+                        <Button
+                          onClick={() =>
+                            handleDownloadDocument(
+                              document.downloadUrl || '',
+                              document.fileName
+                            )
+                          }
+                          variant="secondary"
+                          size="sm"
+                          disabled={!document.downloadUrl}
+                          className="flex items-center gap-1"
+                        >
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-gray-500">
+                  <FileText className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                  <p>Click "Load Documents" to view uploaded documents</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div className="flex justify-center py-8">
+          <div className="text-center">
+            <p className="text-gray-500">No voter data available</p>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 };

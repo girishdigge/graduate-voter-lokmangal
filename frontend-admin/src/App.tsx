@@ -48,14 +48,7 @@ function App() {
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="voters" element={<VotersPage />} />
               <Route path="references" element={<ReferencesPage />} />
-              <Route
-                path="settings"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <SettingsPage />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="settings" element={<SettingsPage />} />
             </Route>
 
             {/* Catch all route */}

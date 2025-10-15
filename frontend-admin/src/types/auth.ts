@@ -2,7 +2,7 @@ export interface AdminUser {
   id: string;
   username: string;
   email: string;
-  role: 'admin' | 'manager';
+  role: 'admin' | 'manager' | 'ADMIN' | 'MANAGER';
   fullName: string;
   isActive: boolean;
 }
